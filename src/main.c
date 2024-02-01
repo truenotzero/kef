@@ -1,15 +1,17 @@
 
 #include <stdio.h>
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <Windows.h>
+
+#include "core/khotreload.h"
 
 int main(int argc, char *argv[]) {
+    (void) argc;
+    (void) argv;
+    
     printf("Hello, World!\n");
 
     void (*target)(void) = 0;
 
-    HMODULE dylib = NULL;
+    kDylib dylib;
     
     int running = 1;
     do {
@@ -27,19 +29,14 @@ int main(int argc, char *argv[]) {
                 continue;
         }
 
-        if (dylib != NULL) {
-            FreeLibrary(dylib);
-        }
 
-        dylib = LoadLibrary(TEXT("dynamic"));
-        if (dylib == NULL) {
-            printf("Failed loading dynamic lib\n");
+        if (!kLoadDylib(&dylib, "dynamic")) {
+            printf("Failed to load dynamic lib\n");
             return 1;
         }
 
-        target = (void(*)(void)) GetProcAddress(dylib, "dynamic_print_stuff");
-        if (target == NULL) {
-            printf("Failed finding dynamic function\n");
+        if (!kGetDyfun(dylib, "dynamic_print_stuff", (void **) &target)) {
+            printf("Failed to load dynamic fun\n");
             return 1;
         }
 
@@ -47,6 +44,6 @@ int main(int argc, char *argv[]) {
 
     } while (running);
 
-    FreeLibrary(dylib);
+    kFreeDylib(&dylib);
     return 0;
 }
