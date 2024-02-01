@@ -1,5 +1,5 @@
-#ifndef KHOTRELOAD_H_
-#define KHOTRELOAD_H_
+#ifndef HOTRELOAD_H_
+#define HOTRELOAD_H_
 
 #include "ktype.h"
 
@@ -9,4 +9,4 @@ b8 kLoadDylib(kDylib *self, c_str dylib_name);
 u0 kFreeDylib(kDylib *self);
 b8 kGetDyfun(kDylib const self, c_str dyfun_name, void **dyfun);
 
-#endif // KHOTRELOAD_H_
+#endif // HOTRELOAD_H_

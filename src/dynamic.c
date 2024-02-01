@@ -1,4 +1,4 @@
-
+#include <khot.h>
 #include <stdio.h>
 
 /*
@@ -7,6 +7,6 @@ rename the old dynamic lib
 recompile source -> dylib
 */
 
-void __declspec(dllexport) dynamic_print_stuff(void) {
+KDYFUN void dynamic_print_stuff(void) {
     printf("Testing the library - go!\n");
 }

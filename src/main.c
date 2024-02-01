@@ -1,7 +1,6 @@
 
 #include <stdio.h>
-
-#include "core/khotreload.h"
+#include "core/hotreload.h"
 
 int main(int argc, char *argv[]) {
     (void) argc;

@@ -1,13 +1,9 @@
 #ifdef _WIN32
-#include "khotreload.h"
+#include "hotreload.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
-
-// static HMODULE native(kDylib self) {
-//     return (HMODULE) self;
-// }
 
 b8 kLoadDylib(kDylib *self, c_str dylib_name) {
     if (!self) return kfalse;
