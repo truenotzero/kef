@@ -9,19 +9,43 @@ int main(int argc, char *argv[]) {
 
     void (*target)(void) = 0;
 
-    HMODULE dylib = LoadLibrary(TEXT("dynamic"));
-    if (dylib == NULL) {
-        printf("Failed loading dynamic lib\n");
-        return 1;
-    }
+    HMODULE dylib = NULL;
+    
+    int running = 1;
+    do {
+        int input = getchar();
+        switch (input) {
+            case 'r':
+            case 'R':
+                break;
+            
+            case 'q':
+            case 'Q':
+                running = 0;
+                // fall through
+            default:
+                continue;
+        }
 
-    target = (void(*)(void)) GetProcAddress(dylib, "dynamic_print_stuff");
-    if (target == NULL) {
-        printf("Failed finding dynamic function\n");
-        return 1;
-    }
+        if (dylib != NULL) {
+            FreeLibrary(dylib);
+        }
 
-    target();
+        dylib = LoadLibrary(TEXT("dynamic"));
+        if (dylib == NULL) {
+            printf("Failed loading dynamic lib\n");
+            return 1;
+        }
+
+        target = (void(*)(void)) GetProcAddress(dylib, "dynamic_print_stuff");
+        if (target == NULL) {
+            printf("Failed finding dynamic function\n");
+            return 1;
+        }
+
+        target();
+
+    } while (running);
 
     FreeLibrary(dylib);
     return 0;
