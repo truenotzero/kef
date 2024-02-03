@@ -1,5 +1,8 @@
-*.dll*
-*.exe*
-*.obj*
-*.exp*
-*.lib*
+*.dll
+*.dll.old
+*.exe
+*.obj
+*.exp
+*.lib
+*.pdb
+!dep/*

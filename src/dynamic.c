@@ -1,4 +1,4 @@
-#include <khot.h>
+#include <dy/kdylib.h>
 #include <ktype.h>
 #include <stdio.h>
 
@@ -9,13 +9,6 @@ recompile source -> dylib
 */
 
 #include <GL/glew.h>
-#include <GLFW/glfw3.h>
-
-static void cb(GLFWwindow *wnd, int key, int sc, int action, int mods) {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        glfwSetWindowShouldClose(wnd, GLFW_TRUE);
-    }
-}
 
 static c_str VERTEX_SHADER =
 "#version 450 core\n"
@@ -27,9 +20,9 @@ static c_str VERTEX_SHADER =
 
 static c_str FRAGMENT_SHADER =
 "#version 450 core\n"
-"out vec4 col;\n"
+"out vec3 col;\n"
 "void main() {\n"
-    "col = vec4(1.0f, 0.0f, 0.0f, 0.0f);\n"
+    "col = vec3(1.0f, 0.0f, 0.0f);\n"
 "}\n"
 ;
 
@@ -57,23 +50,12 @@ static void check_shader(GLuint shader) {
     printf("Failed to compile %s shader: %s\n", shader_type_string, buffer);
 }
 
-KDYFUN void dynamic_print_stuff(void) {
-    glfwInit();
-    GLFWwindow *window = glfwCreateWindow(1200, 1200, "TITLE", NULL, NULL);
-    glfwMakeContextCurrent(window);
+static GLuint vao, vbo, program;
 
-    if (glewInit() != GLEW_OK) {
-        printf("Failed to initialize GLEW\n");
-    }
-
-    glfwSetKeyCallback(window, &cb);
-
-
-    GLuint vao;
+KDYFUN void dylib_setup(void) {
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-    GLuint vbo;
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
@@ -87,7 +69,7 @@ KDYFUN void dynamic_print_stuff(void) {
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *) 0);
 
-    GLuint program = glCreateProgram();
+    program = glCreateProgram();
     GLuint vert = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vert, 1, &VERTEX_SHADER, NULL);
     glCompileShader(vert);
@@ -104,12 +86,19 @@ KDYFUN void dynamic_print_stuff(void) {
     glDeleteShader(frag);
     glDeleteShader(vert);
     glUseProgram(program);
+}
 
-    while (!glfwWindowShouldClose(window)) {
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
-    glfwDestroyWindow(window);
-    glfwTerminate();
+KDYFUN void dylib_cleanup(void) {
+    glDeleteProgram(program);
+    glDeleteBuffers(1, &vbo);
+    glDeleteVertexArrays(1, &vao);
+}
+
+KDYFUN void render(void) {
+    glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glUseProgram(program);
+    glBindVertexArray(vao);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
 }
