@@ -1,6 +1,9 @@
 #include <dy/kdycode.h>
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
 //! functions that must be provided by OS implementations 
 
@@ -14,6 +17,9 @@ extern u0 kDyPlatUnloadLib(os_handle_t);
 
 // locate a function fun_name in the os handle, return 0 on error
 extern kDyfun kDyPlatGetDyFun(os_handle_t, c_str fun_name);
+
+// the extension for dynamic libraries (.dll, .so, etc)
+extern c_str kdyplat_libext;
 
 //! common generic functionality
 
@@ -44,13 +50,45 @@ static u0 try_callback(os_handle_t os_handle, c_str cb_name) {
     }
 }
 
+static b8 timestamp_get(c_str timestamp, time_t *t) {
+    FILE *f = fopen(timestamp, "rb");
+    if (f) {
+        time_t now;
+        fread(&now, sizeof(now), 1, f);
+        fclose(f);
+        if (t) {
+            *t = now;
+        }
+        return ktrue;
+    }
+    return kfalse;
+}
+
+
 b8 kDyRequestReload(kDylib *self) {
     if (!self) { return kfalse; }
 
-    if (self->os_handle != NULL) {
-        kDyUnload(self);
+    c_str stamp_file = "timestamp.bin";
+    time_t stamp;
+    if (!timestamp_get(stamp_file, &stamp)) {
+        printf("Hot code reload: No timestamp file...\n");
+        return kfalse;
     }
 
+    if (self->os_handle != NULL) {
+        // check if the timestamp is newer than
+        // the last load time
+        // if it is, we must reload
+        if (difftime(stamp, self->stamp) > 0) {
+            kDyCleanup(self);
+        } else {
+            return ktrue;
+        }
+    }
+
+    printf("Reload request fulfilled\n");
+
+    self->stamp = stamp;
     self->os_handle = kDyPlatLoadLib(self->name);
     if (self->os_handle == NULL) { return kfalse; }
 
@@ -65,6 +103,7 @@ b8 kDyRequestReload(kDylib *self) {
 
         *dyfun = f;
     }
+
 
     return ktrue;
 }

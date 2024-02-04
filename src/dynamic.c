@@ -8,97 +8,88 @@ rename the old dynamic lib
 recompile source -> dylib
 */
 
-#include <GL/glew.h>
+#include <render/kgl.h>
 
-static c_str VERTEX_SHADER =
-"#version 450 core\n"
-"layout(location=0) in vec4 aPos;\n"
-"void main() {\n"
-"   gl_Position = aPos;\n"
-"}\n"
-;
-
-static c_str FRAGMENT_SHADER =
-"#version 450 core\n"
-"out vec3 col;\n"
-"void main() {\n"
-    "col = vec3(1.0f, 0.0f, 0.0f);\n"
-"}\n"
-;
-
-static void check_shader(GLuint shader) {
-    GLint status;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-    if (status == GL_TRUE) return;
-
-    GLint type;
-    glGetShaderiv(shader, GL_SHADER_TYPE, &type);
-    c_str shader_type_string;
-    switch (type) {
-        case GL_VERTEX_SHADER:
-            shader_type_string = "vertex";
+u0 k__renderCheckGlImpl(c_str file, int line) {
+    char const *err_str;
+    switch (glGetError()) {
+        case GL_NO_ERROR:
+            return;
+        case GL_INVALID_ENUM:
+            err_str = "GL_INVALID_ENUM";
             break;
-        case GL_FRAGMENT_SHADER:
-            shader_type_string = "fragment";
+        case GL_INVALID_VALUE:
+            err_str = "GL_INVALID_VALUE";
             break;
-        default:
-            shader_type_string = "unknown";
+        case GL_INVALID_OPERATION:
+            err_str = "GL_INVALID_OPERATION";
+            break;
+        case GL_INVALID_FRAMEBUFFER_OPERATION:
+            err_str = "GL_INVALID_FRAMEBUFFER_OPERATION";
+            break;
+        case GL_OUT_OF_MEMORY:
+            err_str = "GL_OUT_OF_MEMORY";
+            break;
+        case GL_STACK_OVERFLOW:
+            err_str = "GL_STACK_OVERFLOW";
+            break;
+        case GL_STACK_UNDERFLOW:
+            err_str = "GL_STACK_UNDERFLOW";
             break;
     }
-    char buffer[1024];
-    glGetShaderInfoLog(shader, sizeof(buffer), 0, buffer);
-    printf("Failed to compile %s shader: %s\n", shader_type_string, buffer);
+    printf("[%s:%d] GL call error: %s\n", file, line, err_str);
 }
 
-static GLuint vao, vbo, program;
+static GLuint ebo;
+
+struct vertex {
+    float pos[2];
+    float col[3];
+};
+
+typedef void (__stdcall *glDrawElements_t)(GLenum mode, GLsizei count, GLenum type, const void *indices);
+glDrawElements_t _glDrawElements;
 
 KDYFUN void dylib_setup(void) {
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-    float vertex_data[] = {
-        0.0f, 0.75f,
-        -0.75f, -0.75f,
-        0.75f, -0.75f,
+    struct vertex vertex_data[] = {
+        [0] = {
+            { -0.5f, 0.5f },
+            { 1.0f, 0.0, 0.0f },
+        },
+        [1] = {
+            { 0.5f, 0.5f },
+            { 0.0f, 1.0, 0.0f },
+        },
+        [2] = {
+            { 0.5f, -0.5f },
+            { 0.0f, 0.0, 1.0f },
+        },
+        [3] = {
+            { -0.5f, -0.5f },
+            { 1.0f, 1.0, 0.0f },
+        },
     };
 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *) 0);
+    KGL(glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW));
 
-    program = glCreateProgram();
-    GLuint vert = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vert, 1, &VERTEX_SHADER, NULL);
-    glCompileShader(vert);
-    check_shader(vert);
-    glAttachShader(program, vert);
+    GLuint indices[] = {
+        0, 1, 2,
+        2, 3, 0
+    };
 
-    GLuint frag = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(frag, 1, &FRAGMENT_SHADER, NULL);
-    glCompileShader(frag);
-    check_shader(frag);
-    glAttachShader(program, frag);
-
-    glLinkProgram(program);
-    glDeleteShader(frag);
-    glDeleteShader(vert);
-    glUseProgram(program);
+    KGL(glGenBuffers(1, &ebo));
+    KGL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo));
+    KGL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW));
 }
 
 KDYFUN void dylib_cleanup(void) {
-    glDeleteProgram(program);
-    glDeleteBuffers(1, &vbo);
-    glDeleteVertexArrays(1, &vao);
+    KGL(glDeleteBuffers(1, &ebo));
 }
 
 KDYFUN void render(void) {
-    glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    KGL(glClearColor(0.2f, 0.2f, 0.2f, 1.0f));
+    KGL(glClear(GL_COLOR_BUFFER_BIT));
 
-    glUseProgram(program);
-    glBindVertexArray(vao);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    KGL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void *) 0));
+    // KGL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
 }

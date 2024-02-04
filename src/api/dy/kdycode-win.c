@@ -7,8 +7,6 @@
 #include <Windows.h>
 #include <ktype.h>
 
-#include <stdio.h>
-
 // find library by name on disk, return 0 on error
 HMODULE kDyPlatLoadLib(c_str lib_name) {
     return LoadLibraryA(lib_name);
@@ -23,5 +21,7 @@ extern u0 kDyPlatUnloadLib(HMODULE h) {
 extern kDyfun kDyPlatGetDyFun(HMODULE h, c_str fun_name) {
     return (kDyfun) GetProcAddress(h, fun_name);
 }
+
+c_str kdyplat_libext = ".dll";
 
 #endif // _WIN32
