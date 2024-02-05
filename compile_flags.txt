@@ -4,6 +4,7 @@
 
 -Iapi
 -Iinclude
+-Isrc
 -Isrc/api
 
 -Llib
