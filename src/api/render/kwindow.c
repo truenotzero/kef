@@ -47,7 +47,7 @@ void kWindowLoop(void) {
 }
 
 // impl for kgl.h
-#include "kgl.h"
+#include <render/kgl.h>
 #include <stdio.h>
 u0 k__renderCheckGlImpl(c_str file, int line) {
     char const *err_str;

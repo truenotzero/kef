@@ -3,16 +3,29 @@
 
 #include <ktype.h>
 
+#define KUNIFORM_MAX 16
+
+typedef struct kRenderProgramUniform {
+    int location;
+    int num_elements;
+    enum kType type;
+    void *data;
+} kRenderProgramUniform;
 
 typedef struct kRenderProgram {
     // unsigned vao;
     unsigned program;
+    int num_uniforms;
+    kRenderProgramUniform uniforms[KUNIFORM_MAX];
 } kRenderProgram;
 
 b8 kRenderProgramCreate(kRenderProgram *self);
 b8 kRenderProgramDestroy(kRenderProgram *self);
-b8 kRenderProgramUse(kRenderProgram *self);
 b8 kRenderProgramLoad(kRenderProgram *self, c_str program_name);
+// TODO: bind uniform kRenderProgramBindUniform
+b8 kRenderProgramBindUniformImpl(kRenderProgram *self, c_str name, void *data, enum kType type, int num_elems);
+#define kRenderProgramBindUniform(self, name, num_elems, bound_var_ptr) kRenderProgramBindUniformImpl(self, name, bound_var_ptr, kGetType(*bound_var_ptr), num_elems)
+b8 kRenderProgramUse(kRenderProgram *self);
 
 // #define accessStructElem(strukt, elem) (((strukt *) 0)->elem)
 // #define toGLType(var)               \

@@ -1,4 +1,4 @@
-#include "kprogram.h"
+#include <render/kprogram.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -22,20 +22,40 @@ b8 kRenderProgramDestroy(kRenderProgram *self) {
     return kfalse;
 }
 
+b8 kRenderProgramBindUniformImpl(kRenderProgram *self, c_str name, void *data, enum kType type, int num_elems) {
+    if (!self) { return kfalse; }
+
+    GLint location = KGL(glGetUniformLocation(self->program, name));
+    if (location == -1) { return kfalse; }
+    self->uniforms[self->num_uniforms] = (kRenderProgramUniform) {
+        .data = data,
+        .type = type,
+        .num_elements = num_elems,
+        .location = location,
+    };
+
+    self->num_uniforms += 1;
+    return ktrue;
+}
+
 b8 kRenderProgramUse(kRenderProgram *self) {
-    // GLuint vao;
-    GLuint program;
     if (!self) {
-        // vao = 0;
-        program = 0;
-    } else {
-        // if (self->vao == 0 || self->program == 0) { return kfalse; }
-        // vao = self->vao;
-        program = self->program;
+        KGL(glUseProgram(0));
+        return ktrue;
     }
 
-    // KGL(glBindVertexArray(vao));
-    KGL(glUseProgram(program));
+    KGL(glUseProgram(self->program));
+    for (int i = 0; i < self->num_uniforms; ++i) {
+        kRenderProgramUniform *u = &self->uniforms[i];
+        switch (u->type) {
+            case KTYPE_F32:
+                KGL(glUniform1fv(u->location, u->num_elements, u->data));
+                break;
+            case KTYPE_VEC3F:
+                KGL(glUniform3fv(u->location, u->num_elements, u->data));
+                break;
+        }
+    }
     return ktrue;
 }
 

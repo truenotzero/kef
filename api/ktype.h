@@ -23,4 +23,23 @@ typedef char b8;
 
 typedef char const *c_str;
 
+typedef union kVec3f {
+    float a[3];
+    struct { float x, y, z; };
+    struct { float r, g, b; };
+} kVec3f;
+
+enum kType {
+    KTYPE_F32,
+    KTYPE_VEC3F,
+};
+
+#define kGetType(expr) \
+    _Generic( (expr) \
+    , f32: KTYPE_F32 \
+    , kVec3f: KTYPE_VEC3F \
+    )
+
+int kGetTypeSize(enum kType);
+
 #endif // KTYPE_H_
