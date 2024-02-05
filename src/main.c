@@ -5,12 +5,14 @@
 #include <render/kwindow.h>
 #include <render/kgl.h>
 #include <render/kprogram.h>
+#include <render/kmesh.h>
 
 
 // TODO
 // vertex attribute bindings too...
 
 kDylib dylib;
+kRenderMesh mesh;
 
 extern int GetLastError(void);
 
@@ -26,14 +28,12 @@ kDyfun dynamic_render = 0;
 
 void kWindowRender(void) {
     if (dynamic_render) {
-        dynamic_render();
+        // dynamic_render();
     }
+
+    kRenderMeshDraw(&mesh);
 }
 
-struct vertex {
-    float pos[2];
-    float col[3];
-};
 void work(void) {
     printf("Hello, World!\n");
     dylib = (kDylib) {0};
@@ -42,21 +42,18 @@ void work(void) {
         kDyBindLib(&dylib, "dynamic");
         kDyBindFun(&dylib, "render", &dynamic_render);
 
-        GLuint vbo;
-        KGL(glGenBuffers(1, &vbo));
-        KGL(glBindBuffer(GL_ARRAY_BUFFER, vbo));
-
         kRenderProgram prog;
         kRenderProgramCreate(&prog);
         kRenderProgramLoad(&prog, "shaders/base");
-        kRenderProgramVertAttrib(&prog, 0, kfalse, struct vertex, pos);
-        kRenderProgramVertAttrib(&prog, 1, kfalse, struct vertex, col);
         kRenderProgramUse(&prog);
+
+        kRenderMeshCreate(&mesh);
+        kRenderMeshLoad(&mesh, "res/mesh/square.obj");
 
         kWindowLoop();
 
-        kRenderProgramDestroy(&prog);
-        KGL(glDeleteBuffers(1, &vbo));
+        // kRenderProgramDestroy(&prog);
+        kRenderMeshDestroy(&mesh);
     }
 
     kDyCleanup(&dylib);

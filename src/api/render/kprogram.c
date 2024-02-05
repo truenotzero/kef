@@ -7,7 +7,7 @@
 
 b8 kRenderProgramCreate(kRenderProgram *self) {
     if (!self) { return kfalse; }
-    KGL(glGenVertexArrays(1, &self->vao));
+    // KGL(glGenVertexArrays(1, &self->vao));
     KGL(self->program = glCreateProgram());
     return ktrue;
 }
@@ -17,23 +17,24 @@ b8 kRenderProgramDestroy(kRenderProgram *self) {
     KGL(glDeleteProgram(self->program));
     self->program = 0;
 
-    KGL(glDeleteVertexArrays(1, &self->vao));
-    self->vao = 0;
+    // KGL(glDeleteVertexArrays(1, &self->vao));
+    // self->vao = 0;
     return kfalse;
 }
 
 b8 kRenderProgramUse(kRenderProgram *self) {
-    GLuint vao, program;
+    // GLuint vao;
+    GLuint program;
     if (!self) {
-        vao = 0;
+        // vao = 0;
         program = 0;
     } else {
-        if (self->vao == 0 || self->program == 0) { return kfalse; }
-        vao = self->vao;
+        // if (self->vao == 0 || self->program == 0) { return kfalse; }
+        // vao = self->vao;
         program = self->program;
     }
 
-    KGL(glBindVertexArray(vao));
+    // KGL(glBindVertexArray(vao));
     KGL(glUseProgram(program));
     return ktrue;
 }
@@ -162,11 +163,12 @@ unsigned k__glTypeSize(int type) {
             return 0;
     }
 }
-b8 kRenderProgramVertAttribImpl(kRenderProgram *self, int layout_location, b8 normalize, int vertex_sz, int attrib_type, int attrib_len, unsigned attrib_offset) {
-    if (!self || self->vao == 0) { return kfalse; }
-    KGL(glBindVertexArray(self->vao));
-    KGL(glEnableVertexAttribArray(layout_location));
-    KGL(glVertexAttribPointer(layout_location, attrib_len, attrib_type, normalize, vertex_sz, (void *) attrib_offset));
 
-    return ktrue;
-}
+// b8 kRenderProgramVertAttribImpl(kRenderProgram *self, int layout_location, b8 normalize, int vertex_sz, int attrib_type, int attrib_len, unsigned attrib_offset) {
+//     if (!self || self->vao == 0) { return kfalse; }
+//     KGL(glBindVertexArray(self->vao));
+//     KGL(glEnableVertexAttribArray(layout_location));
+//     KGL(glVertexAttribPointer(layout_location, attrib_len, attrib_type, normalize, vertex_sz, (void *) attrib_offset));
+
+    // return ktrue;
+// }

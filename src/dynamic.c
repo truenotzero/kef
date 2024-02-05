@@ -47,49 +47,46 @@ struct vertex {
     float col[3];
 };
 
-typedef void (__stdcall *glDrawElements_t)(GLenum mode, GLsizei count, GLenum type, const void *indices);
-glDrawElements_t _glDrawElements;
-
 KDYFUN void dylib_setup(void) {
-    struct vertex vertex_data[] = {
-        [0] = {
-            { -0.5f, 0.5f },
-            { 1.0f, 0.0, 0.0f },
-        },
-        [1] = {
-            { 0.5f, 0.5f },
-            { 0.0f, 1.0, 0.0f },
-        },
-        [2] = {
-            { 0.5f, -0.5f },
-            { 0.0f, 0.0, 1.0f },
-        },
-        [3] = {
-            { -0.5f, -0.5f },
-            { 1.0f, 1.0, 0.0f },
-        },
-    };
+    // struct vertex vertex_data[] = {
+    //     [0] = {
+    //         { -0.5f, 0.5f },
+    //         { 1.0f, 0.0, 0.0f },
+    //     },
+    //     [1] = {
+    //         { 0.5f, 0.5f },
+    //         { 0.0f, 1.0, 0.0f },
+    //     },
+    //     [2] = {
+    //         { 0.5f, -0.5f },
+    //         { 0.0f, 0.0, 1.0f },
+    //     },
+    //     [3] = {
+    //         { -0.5f, -0.5f },
+    //         { 1.0f, 1.0, 0.0f },
+    //     },
+    // };
 
-    KGL(glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW));
+    // KGL(glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW));
 
-    GLuint indices[] = {
-        0, 1, 2,
-        2, 3, 0
-    };
+    // GLuint indices[] = {
+    //     0, 1, 2,
+    //     2, 3, 0
+    // };
 
-    KGL(glGenBuffers(1, &ebo));
-    KGL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo));
-    KGL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW));
+    // KGL(glGenBuffers(1, &ebo));
+    // KGL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo));
+    // KGL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW));
 }
 
 KDYFUN void dylib_cleanup(void) {
-    KGL(glDeleteBuffers(1, &ebo));
+    // KGL(glDeleteBuffers(1, &ebo));
 }
 
 KDYFUN void render(void) {
-    KGL(glClearColor(0.2f, 0.2f, 0.2f, 1.0f));
-    KGL(glClear(GL_COLOR_BUFFER_BIT));
+    // KGL(glClearColor(0.2f, 0.2f, 0.2f, 1.0f));
+    // KGL(glClear(GL_COLOR_BUFFER_BIT));
 
-    KGL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void *) 0));
-    // KGL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
+    // KGL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void *) 0));
+    // // KGL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
 }
