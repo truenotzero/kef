@@ -1,8 +1,10 @@
 #version 450 core
 
-in vec4 col;
+in vec2 uv;
 out vec4 fragCol;
 
+uniform sampler2D tex;
+
 void main() {
-    fragCol = col;
+    fragCol = texture(tex, uv);
 }

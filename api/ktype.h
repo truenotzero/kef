@@ -29,6 +29,12 @@ typedef union kVec3f {
     struct { float r, g, b; };
 } kVec3f;
 
+typedef union kVec2f {
+    float a[2];
+    struct { float x, y; };
+    struct { float u, v; };
+} kVec2f;
+
 enum kType {
     KTYPE_F32,
     KTYPE_VEC3F,

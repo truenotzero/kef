@@ -1,6 +1,7 @@
 #include <render/kmesh.h>
 
 #include <render/kgl.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -32,14 +33,14 @@ b8 kRenderMeshLoad(kRenderMesh *self, c_str mesh_filename) {
     FILE *f = fopen(mesh_filename, "r");
     if (!f) { return kfalse; }
 
-    struct vertex {
-        float x;
-        float y;
-        float z;
-    } vertices[256];
+    struct vert {
+        kVec3f pos;
+        kVec2f tex;
+    } verts[256];
+    int num_pos = 0;
+    int num_tex = 0;
     int const indices_per_face = 3;
     unsigned indices[3 * 1024];
-    unsigned num_vertices = 0;
     unsigned num_indices = 0;
 
     while (fgets(line, line_sz, f)) {
@@ -53,11 +54,19 @@ b8 kRenderMeshLoad(kRenderMesh *self, c_str mesh_filename) {
                 // comment found, skip
                 continue;
             case 'v':
-                // define vertex:
-                struct vertex *v = &vertices[num_vertices];
-                // line[1] is a space, line[2] is where data starts
-                sscanf(&line[2], "%f %f %f", &v->x, &v->y, &v->z);
-                num_vertices += 1;
+                if (line[1] == 't') {
+                    kVec2f *v = &verts[num_tex].tex;
+                    // line[1] is 't', line[2] is a space, line[3] is where data starts
+                    sscanf(&line[3], "%f %f", &v->u, &v->v);
+                    num_tex += 1;
+                    // define texture coords
+                } else {
+                    // define vertex:
+                    kVec3f *v = &verts[num_pos].pos;
+                    // line[1] is a space, line[2] is where data starts
+                    sscanf(&line[2], "%f %f %f", &v->x, &v->y, &v->z);
+                    num_pos += 1;
+                }
                 break;
             case 'f':
                 // define face (triangle) by indices:
@@ -77,12 +86,17 @@ b8 kRenderMeshLoad(kRenderMesh *self, c_str mesh_filename) {
     KGL(glBindVertexArray(self->vao));
 
     // set the vertex data
+    int num_vertices = num_pos > num_tex ? num_pos : num_tex;
     KGL(glBindBuffer(GL_ARRAY_BUFFER, self->vertexdata_bo));
-    KGL(glBufferData(GL_ARRAY_BUFFER, num_vertices * sizeof(struct vertex), vertices, GL_STATIC_DRAW));
+    KGL(glBufferData(GL_ARRAY_BUFFER, num_vertices * sizeof(struct vert), verts, GL_STATIC_DRAW));
 
     // describe the vertex data
+    // vertex position (xyz)
     KGL(glEnableVertexAttribArray(0));
-    KGL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *) 0));
+    KGL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(struct vert), (void *)offsetof(struct vert, pos)));
+    // vertex texture coords (uv)
+    KGL(glEnableVertexAttribArray(1));
+    KGL(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(struct vert), (void *)offsetof(struct vert, tex)));
 
     // set the index data
     self->num_indices = num_indices;

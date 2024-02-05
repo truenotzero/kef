@@ -38,7 +38,7 @@ float a = 0;
 void kWindowRender(void) {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-    
+
     if (dynamic_render) {
         // dynamic_render();
     }
@@ -52,6 +52,28 @@ void kWindowRender(void) {
     kRenderMeshDraw(&mesh);
 }
 
+#include "core/stb_image.h"
+u0 texture_test(u0) {
+    int width, height, nrChannels;
+    stbi_set_flip_vertically_on_load(ktrue);
+    void *data = stbi_load("res/tex/wall_arrow.png", &width, &height, &nrChannels, 0);
+
+    unsigned texobj;
+    glGenTextures(1, &texobj);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texobj);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    // glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(data);
+}
+
 void work(void) {
     printf("Hello, World!\n");
     dylib = (kDylib) {0};
@@ -62,8 +84,9 @@ void work(void) {
 
         assert(kRenderProgramCreate(&prog));
         assert(kRenderProgramLoad(&prog, "shaders/base"));
-        assert(kRenderProgramBindUniform(&prog, "uCol", 1, &uniform.col));
-        assert(kRenderProgramBindUniform(&prog, "brightness", 1, &uniform.brightness));
+        // assert(kRenderProgramBindUniform(&prog, "uCol", 1, &uniform.col));
+        // assert(kRenderProgramBindUniform(&prog, "brightness", 1, &uniform.brightness));
+        texture_test();
 
         assert(kRenderMeshCreate(&mesh));
         assert(kRenderMeshLoad(&mesh, "res/mesh/square.obj"));
