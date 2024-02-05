@@ -36,6 +36,9 @@ kDyfun dynamic_render = 0;
 
 float a = 0;
 void kWindowRender(void) {
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    
     if (dynamic_render) {
         // dynamic_render();
     }
