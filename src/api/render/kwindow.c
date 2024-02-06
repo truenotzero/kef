@@ -1,17 +1,23 @@
 #include <render/kwindow.h>
 
 #include <GL/glew.h>
+#include <render/kgl.h>
 #include <GLFW/glfw3.h>
 
 static GLFWwindow *window = 0;
 
-static void cb(GLFWwindow *wnd, int key, int sc, int action, int mods) {
+static void key_cb(GLFWwindow *wnd, int key, int sc, int action, int mods) {
     (void) sc;
     (void) mods;
     
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(wnd, GLFW_TRUE);
     }
+}
+
+static void framebuffer_size_cb(GLFWwindow *wnd, int width, int height) {
+    (void) wnd;
+    KGL(glViewport(0, 0, width, height));
 }
 
 b8 kWindowCreate(void) {
@@ -23,9 +29,11 @@ b8 kWindowCreate(void) {
     if (window == NULL) return kfalse;
     glfwMakeContextCurrent(window);
 
+    glfwSetFramebufferSizeCallback(window, &framebuffer_size_cb);
+
     if (glewInit() != GLEW_OK) return kfalse;
 
-    glfwSetKeyCallback(window, &cb);
+    glfwSetKeyCallback(window, &key_cb);
 
     return ktrue;
 }
