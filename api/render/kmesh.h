@@ -6,7 +6,7 @@
 typedef struct kRenderMesh {
     unsigned vao;
     unsigned vertexdata_bo;
-    unsigned indices_bo;
+    // unsigned indices_bo;
     int num_indices;
 } kRenderMesh;
 

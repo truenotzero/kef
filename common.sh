@@ -13,7 +13,7 @@ WARN="-Wall -Wextra -Wpedantic"
 INCLUDE_DIRS="-Iapi -Iinclude -Isrc -Isrc/api"
 LIBRARY_DIRS="-Llib"
 DEPENDENCIES="-lglfw3dll -lglew32 -lopengl32"
-DEBUG="-g -gcodeview -O0"
+DEBUG="-g -O0 -fno-inline"
 DEFINES=-D_CRT_SECURE_NO_WARNINGS
 
 # Platform specific
