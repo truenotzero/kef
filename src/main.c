@@ -9,6 +9,7 @@
 #include <render/kgl.h>
 #include <render/kprogram.h>
 #include <render/kmesh.h>
+#include <render/ktexture.h>
 #include "core/kmath.h"
 
 
@@ -49,28 +50,6 @@ void kWindowRender(void) {
     kRenderMeshDraw(&mesh);
 }
 
-#include "core/stb_image.h"
-u0 texture_test(u0) {
-    int width, height, nrChannels;
-    stbi_set_flip_vertically_on_load(ktrue);
-    void *data = stbi_load("res/tex/wall_arrow.png", &width, &height, &nrChannels, 0);
-
-    unsigned texobj;
-    glGenTextures(1, &texobj);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texobj);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    stbi_image_free(data);
-}
-
 void work(void) {
     printf("Hello, World!\n");
     dylib = (kDylib) {0};
@@ -83,7 +62,6 @@ void work(void) {
         assert(kRenderProgramLoad(&prog, "shaders/base"));
         // assert(kRenderProgramBindUniform(&prog, "brightness", 1, &uniform.brightness));
         kRenderProgramBindUniform(&prog, "uMat", 1, &uniform.mat);
-        texture_test();
 
         uniform.mat = kMatIdentity4f();
         kVec3f axis = {0};
@@ -94,12 +72,18 @@ void work(void) {
         rot = kMatRotate4f(axis, 0.0025f);
         // kMatPrint4f(rot);
 
+        kRenderTexture tex;
+        kRenderTextureCreate(&tex);
+        kRenderTextureLoad(&tex, "res/tex/wall_arrow.png");
+        kRenderTextureUse(&tex);
+
         assert(kRenderMeshCreate(&mesh));
         assert(kRenderMeshLoad(&mesh, "res/mesh/square.obj"));
 
         kWindowLoop();
 
-        // kRenderProgramDestroy(&prog);
+        kRenderTextureDestroy(&tex);
+        kRenderProgramDestroy(&prog);
         kRenderMeshDestroy(&mesh);
     }
 
