@@ -24,6 +24,8 @@ int kGetTypeSize(enum kType type) {
             return sizeof(f32);
         case KTYPE_VEC3F:
             return sizeof(kVec3f);
+        case KTYPE_MAT4F:
+            return sizeof(kMat4f);
         default:
             return -1;
     }

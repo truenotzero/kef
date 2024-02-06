@@ -54,6 +54,9 @@ b8 kRenderProgramUse(kRenderProgram *self) {
             case KTYPE_VEC3F:
                 KGL(glUniform3fv(u->location, u->num_elements, u->data));
                 break;
+            case KTYPE_MAT4F:
+                KGL(glUniformMatrix4fv(u->location, u->num_elements, GL_FALSE, u->data));
+                break;
         }
     }
     return ktrue;

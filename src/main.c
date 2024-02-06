@@ -9,6 +9,7 @@
 #include <render/kgl.h>
 #include <render/kprogram.h>
 #include <render/kmesh.h>
+#include "core/kmath.h"
 
 
 // TODO
@@ -16,10 +17,10 @@
 
 kDylib dylib;
 kRenderMesh mesh;
+kMat4f rot;
 kRenderProgram prog = {0};
 struct {
-    kVec3f col;
-    float brightness;
+    kMat4f mat;
 } uniform;
 
 extern int GetLastError(void);
@@ -43,11 +44,7 @@ void kWindowRender(void) {
         // dynamic_render();
     }
 
-    a += 0.01f;
-    uniform.brightness = 0.5f * (1.0f + sinf(a));
-    uniform.col.r = 0.75f;
-    uniform.col.g = 0.3f;
-    uniform.col.b = 0.12f;
+    uniform.mat = kMatMul4f(uniform.mat, rot);
     assert(kRenderProgramUse(&prog));
     kRenderMeshDraw(&mesh);
 }
@@ -84,9 +81,18 @@ void work(void) {
 
         assert(kRenderProgramCreate(&prog));
         assert(kRenderProgramLoad(&prog, "shaders/base"));
-        // assert(kRenderProgramBindUniform(&prog, "uCol", 1, &uniform.col));
         // assert(kRenderProgramBindUniform(&prog, "brightness", 1, &uniform.brightness));
+        kRenderProgramBindUniform(&prog, "uMat", 1, &uniform.mat);
         texture_test();
+
+        uniform.mat = kMatIdentity4f();
+        kVec3f axis = {0};
+        axis.x = 1.0f;
+        axis.y = 1.0f;
+        axis.z = 1.0f;
+        axis = kVecNorm3f(axis);
+        rot = kMatRotate4f(axis, 0.0025f);
+        // kMatPrint4f(rot);
 
         assert(kRenderMeshCreate(&mesh));
         assert(kRenderMeshLoad(&mesh, "res/mesh/square.obj"));

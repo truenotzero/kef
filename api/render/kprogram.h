@@ -22,7 +22,6 @@ typedef struct kRenderProgram {
 b8 kRenderProgramCreate(kRenderProgram *self);
 b8 kRenderProgramDestroy(kRenderProgram *self);
 b8 kRenderProgramLoad(kRenderProgram *self, c_str program_name);
-// TODO: bind uniform kRenderProgramBindUniform
 b8 kRenderProgramBindUniformImpl(kRenderProgram *self, c_str name, void *data, enum kType type, int num_elems);
 #define kRenderProgramBindUniform(self, name, num_elems, bound_var_ptr) kRenderProgramBindUniformImpl(self, name, bound_var_ptr, kGetType(*bound_var_ptr), num_elems)
 b8 kRenderProgramUse(kRenderProgram *self);

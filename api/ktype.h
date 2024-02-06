@@ -23,27 +23,41 @@ typedef char b8;
 
 typedef char const *c_str;
 
-typedef union kVec3f {
-    float a[3];
-    struct { float x, y, z; };
-    struct { float r, g, b; };
-} kVec3f;
-
 typedef union kVec2f {
-    float a[2];
     struct { float x, y; };
     struct { float u, v; };
+    float e[1];
 } kVec2f;
+
+typedef union kVec3f {
+    struct { float x, y, z; };
+    struct { float r, g, b; };
+    float e[1];
+} kVec3f;
+
+typedef union kVec4f {
+    struct { float x, y, z, w; };
+    struct { float r, g, b, a; };
+    float e[1];
+} kVec4f;
+
+typedef union kMat4f {
+    struct { float xy[4][4]; };
+    struct { kVec4f v[4]; };
+    float e[1];
+} kMat4f;
 
 enum kType {
     KTYPE_F32,
     KTYPE_VEC3F,
+    KTYPE_MAT4F,
 };
 
 #define kGetType(expr) \
     _Generic( (expr) \
     , f32: KTYPE_F32 \
     , kVec3f: KTYPE_VEC3F \
+    , kMat4f: KTYPE_MAT4F \
     )
 
 int kGetTypeSize(enum kType);
