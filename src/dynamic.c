@@ -1,5 +1,6 @@
 #include <dy/kdylib.h>
 #include <ktype.h>
+#include <core/kmath.h>
 #include <stdio.h>
 
 /*
@@ -40,53 +41,30 @@ u0 k__renderCheckGlImpl(c_str file, int line) {
     printf("[%s:%d] GL call error: %s\n", file, line, err_str);
 }
 
-static GLuint ebo;
-
 struct vertex {
     float pos[2];
     float col[3];
 };
 
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <assert.h>
+typedef kMat4f (*kMatIdentity4f_t)(u0);
+kMatIdentity4f_t identity = 0;
+
 KDYFUN void dylib_setup(void) {
-    // struct vertex vertex_data[] = {
-    //     [0] = {
-    //         { -0.5f, 0.5f },
-    //         { 1.0f, 0.0, 0.0f },
-    //     },
-    //     [1] = {
-    //         { 0.5f, 0.5f },
-    //         { 0.0f, 1.0, 0.0f },
-    //     },
-    //     [2] = {
-    //         { 0.5f, -0.5f },
-    //         { 0.0f, 0.0, 1.0f },
-    //     },
-    //     [3] = {
-    //         { -0.5f, -0.5f },
-    //         { 1.0f, 1.0, 0.0f },
-    //     },
-    // };
-
-    // KGL(glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW));
-
-    // GLuint indices[] = {
-    //     0, 1, 2,
-    //     2, 3, 0
-    // };
-
-    // KGL(glGenBuffers(1, &ebo));
-    // KGL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo));
-    // KGL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW));
+        // KGL(glDisable(GL_CULL_FACE));
+        // identity = (kMatIdentity4f_t) GetProcAddress(GetModuleHandle("main.exe"), "kMatIdentity4f");
+        // assert(identity);
+        // KGL(glEnable(GL_CULL_FACE));
 }
 
 KDYFUN void dylib_cleanup(void) {
-    // KGL(glDeleteBuffers(1, &ebo));
 }
 
 KDYFUN void render(void) {
-    // KGL(glClearColor(0.2f, 0.2f, 0.2f, 1.0f));
-    // KGL(glClear(GL_COLOR_BUFFER_BIT));
+}
 
-    // KGL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void *) 0));
-    // // KGL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
+KDYFUN kMat4f transform(u0) {
+    return identity();
 }

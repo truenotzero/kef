@@ -5,12 +5,20 @@
 
 /* matrix creation */
 
+#define K_PIF 3.14159265f
+#define kRad(a) (a)
+#define kDegf(a) (a * (K_PIF / 180.0f))
+
 // basic matrix
 kMat4f kMatIdentity4f(u0);
 // scale by desired scalars in each axis
 kMat4f kMatScale4f(f32 x_scale, f32 y_scale, f32 z_scale);
 // translate by the amount specified
 kMat4f kMatTrans4f(f32 x_trans, f32 y_trans, f32 z_trans);
+// orthographic projection matrix
+// TODO
+// perspective projection matrix
+// TODO
 
 // rotates by t radians around the axis a
 // axis must be normalized

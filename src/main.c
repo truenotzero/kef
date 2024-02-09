@@ -24,7 +24,8 @@ struct {
     kMat4f mat;
 } uniform;
 
-extern int GetLastError(void);
+#include <Windows.h>
+//extern int GetLastError(void);
 
 void kWindowUpdate(void) {
     if (!kDyRequestReload(&dylib)) {
@@ -35,6 +36,8 @@ void kWindowUpdate(void) {
 }
 
 kDyfun dynamic_render = 0;
+kMat4f(*dynamic_transform)(u0) = 0;
+kMat4f t;
 
 float a = 0;
 void kWindowRender(void) {
@@ -42,10 +45,18 @@ void kWindowRender(void) {
     glClear(GL_COLOR_BUFFER_BIT);
 
     if (dynamic_render) {
-        // dynamic_render();
+        dynamic_render();
     }
 
-    uniform.mat = kMatMul4f(uniform.mat, rot);
+    if (dynamic_transform) {
+        t = dynamic_transform();
+    } else {
+        // t = kMatIdentity4f();
+        kVec3f axis = {0};
+        axis.x = 1.0f;
+        t = kMatMul4f(t, kMatRotate4f(axis, 0.001f));
+    }
+    uniform.mat = t;
     assert(kRenderProgramUse(&prog));
     kRenderMeshDraw(&mesh);
 }
@@ -54,9 +65,13 @@ void work(void) {
     printf("Hello, World!\n");
     dylib = (kDylib) {0};
 
+    f32 scale = 0.3f;
+    t = kMatScale4f(scale, scale, scale);
+
     if (kWindowCreate()) {
         kDyBindLib(&dylib, "dynamic");
         kDyBindFun(&dylib, "render", &dynamic_render);
+        // kDyBindFun(&dylib, "transform", (kDyfun *) &dynamic_transform);
 
         assert(kRenderProgramCreate(&prog));
         assert(kRenderProgramLoad(&prog, "shaders/base"));
@@ -65,9 +80,7 @@ void work(void) {
 
         uniform.mat = kMatIdentity4f();
         kVec3f axis = {0};
-        axis.x = 1.0f;
         axis.y = 1.0f;
-        axis.z = 1.0f;
         axis = kVecNorm3f(axis);
         rot = kMatRotate4f(axis, 0.0025f);
         // kMatPrint4f(rot);
@@ -78,7 +91,7 @@ void work(void) {
         kRenderTextureUse(&tex);
 
         assert(kRenderMeshCreate(&mesh));
-        assert(kRenderMeshLoad(&mesh, "res/mesh/square.obj"));
+        assert(kRenderMeshLoad(&mesh, "res/mesh/teapot.obj"));
 
         kWindowLoop();
 
@@ -91,11 +104,21 @@ void work(void) {
     kWindowDestroy();
 
 }
+
+__declspec(dllexport) void success(void) {
+    printf("eureka!");
+}
+
+
 int main(int argc, char *argv[]) {
     (void) argc;
     (void) argv;
 
     work();
+
+    // typedef void (*fptr)(void);
+    // fptr pSuccess = (fptr) GetProcAddress(GetModuleHandle(NULL), "success");
+    // pSuccess();
 
     return 0;
 }
