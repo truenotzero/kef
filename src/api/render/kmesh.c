@@ -35,7 +35,7 @@ b8 kRenderMeshLoad(kRenderMesh *self, c_str mesh_filename) {
     FILE *f = fopen(mesh_filename, "r");
     if (!f) { return kfalse; }
 
-    static int const max_definitions = 16 * 1024;
+    static int const max_definitions = 32 * 1024;
     int num_positions = 0;
     kVec3f *positions = malloc(max_definitions * sizeof(*positions));
     int num_tex_coords = 0;

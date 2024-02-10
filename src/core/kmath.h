@@ -17,8 +17,13 @@ kMat4f kMatScale4f(f32 x_scale, f32 y_scale, f32 z_scale);
 kMat4f kMatTrans4f(f32 x_trans, f32 y_trans, f32 z_trans);
 // orthographic projection matrix
 // TODO
-// perspective projection matrix
-// TODO
+
+// creates a symmetrical frustum (perspective) transform matrix by defining its corners
+// used to transform from camera-space to clip-space
+// for more details, read:
+// http://www.songho.ca/opengl/gl_projectionmatrix.html
+// all parameters must be positive!
+kMat4f kMatFrustum4f(f32 left_right, f32 top_bottom, f32 near, f32 far);
 
 // rotates by t radians around the axis a
 // axis must be normalized

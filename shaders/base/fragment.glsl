@@ -8,4 +8,5 @@ uniform sampler2D tex;
 
 void main() {
     fragCol = texture(tex, uv);
+    fragCol = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 }

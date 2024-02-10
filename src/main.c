@@ -36,7 +36,7 @@ void kWindowUpdate(void) {
 }
 
 kDyfun dynamic_render = 0;
-kMat4f(*dynamic_transform)(u0) = 0;
+kVec3f(*dynamic_translate)(u0) = 0;
 kMat4f t;
 
 float a = 0;
@@ -48,14 +48,30 @@ void kWindowRender(void) {
         dynamic_render();
     }
 
-    if (dynamic_transform) {
-        t = dynamic_transform();
-    } else {
-        // t = kMatIdentity4f();
-        kVec3f axis = {0};
-        axis.x = 1.0f;
-        t = kMatMul4f(t, kMatRotate4f(axis, 0.001f));
+    // if (dynamic_transform) {
+    //     t = dynamic_transform();
+    // } else {
+    //     // t = kMatIdentity4f();
+    //     kVec3f axis = {0};
+    //     axis.x = 1.0f;
+    //     t = kMatMul4f(t, kMatRotate4f(axis, 0.001f));
+    // }
+    f32 scale = 0.3f;
+    kVec3f trans = { 0.0f, 0.0f, 0.0f };
+    if (dynamic_translate) {
+        trans = dynamic_translate();
     }
+    kVec3f x_axis = {1.0f, 0.0f, 0.0f};
+    kVec3f y_axis = {0.0f, 1.0f, 0.0f};
+    kVec3f z_axis = {0.0f, 0.0f, 1.0f};
+    kMat4f m_rotate = kMatRotate4f(x_axis, kDegf(30.0f));
+    kMat4f m_trans = kMatTrans4f(trans.x, trans.y, trans.z);
+    kMat4f m_scale = kMatScale4f(scale, scale, scale);
+    static f32 a = 0.0f;
+    kMat4f m_spin = kMatRotate4f(y_axis, a);
+    a += 0.01f;
+    kMat4f m_perspective = kMatFrustum4f(1.0f, 1.0f, 1.0f, 100.0f);
+    t = kMatMul4f(kMatMul4f(kMatMul4f(kMatMul4f(m_perspective,m_scale), m_trans), m_rotate), m_spin);
     uniform.mat = t;
     assert(kRenderProgramUse(&prog));
     kRenderMeshDraw(&mesh);
@@ -65,13 +81,11 @@ void work(void) {
     printf("Hello, World!\n");
     dylib = (kDylib) {0};
 
-    f32 scale = 0.3f;
-    t = kMatScale4f(scale, scale, scale);
 
     if (kWindowCreate()) {
         kDyBindLib(&dylib, "dynamic");
         kDyBindFun(&dylib, "render", &dynamic_render);
-        // kDyBindFun(&dylib, "transform", (kDyfun *) &dynamic_transform);
+        kDyBindFun(&dylib, "translate", (kDyfun *) &dynamic_translate);
 
         assert(kRenderProgramCreate(&prog));
         assert(kRenderProgramLoad(&prog, "shaders/base"));
@@ -91,7 +105,7 @@ void work(void) {
         kRenderTextureUse(&tex);
 
         assert(kRenderMeshCreate(&mesh));
-        assert(kRenderMeshLoad(&mesh, "res/mesh/teapot.obj"));
+        assert(kRenderMeshLoad(&mesh, "res/mesh/teapot_triangles.obj"));
 
         kWindowLoop();
 

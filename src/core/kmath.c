@@ -38,18 +38,36 @@ kMat4f kMatRotate4f(kVec3f a, f32 t) {
     assert(kVecLen23f(a) - 1.0f < 0.001f);
 
     kMat4f ret = kMatIdentity4f();
-    f32 c = cosf(t);    // cosine
-    f32 v = 1 - c;        // versine
-    f32 s = sinf(t);    // sine
-    ret.xy[0][0] = c + a.x * a.x * v;
-    ret.xy[1][0] = a.x * a.y * v - a.z * s;
-    ret.xy[2][0] = a.x * a.z * v - a.y * s;
-    ret.xy[0][1] = a.y * a.x * v + a.z * s;
-    ret.xy[1][1] = c + a.y * a.y * v;
-    ret.xy[2][1] = a.y * a.z * v - a.x * a.x * s;
-    ret.xy[0][2] = a.z * a.x * v - a.y * s;
-    ret.xy[1][2] = a.z * a.y * v + a.x * s;
-    ret.xy[2][2] = c * a.z * a.z * v;
+    f32 x = a.x;
+    f32 y = a.y;
+    f32 z = a.z;
+    f32 c = cosf(t);
+    f32 s = sinf(t);
+    // left column
+    ret.xy[0][0] = (1 - c) * x * x + c;
+    ret.xy[0][1] = (1 - c) * x * y + s * z;
+    ret.xy[0][2] = (1 - c) * x * z - s * y;
+    // middle column
+    ret.xy[1][0] = (1 - c) * x * y - s * z;
+    ret.xy[1][1] = (1 - c) * y * y + c;
+    ret.xy[1][2] = (1 - c) * y * z + s * x;
+    // right column
+    ret.xy[2][0] = (1 - c) * x * z + s * y;
+    ret.xy[2][1] = (1 - c) * y * z - s * x;
+    ret.xy[2][2] = (1 - c) * z * z + c;
+    return ret;
+}
+
+kMat4f kMatFrustum4f(f32 left_right, f32 top_bottom, f32 near, f32 far) {
+    assert(left_right > 0.0f);
+    assert(top_bottom > 0.0f);
+    assert(near > 0.0f);
+    assert(far > 0.0f);
+    
+    f32 t = -1.0f / (far - near);
+    kMat4f ret = kMatScale4f(near / left_right, near / top_bottom, (far + near) * t);
+    ret.xy[3][2] = 2.0f * far * near * t;
+    ret.xy[2][3] = -1;
     return ret;
 }
 

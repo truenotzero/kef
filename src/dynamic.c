@@ -65,6 +65,15 @@ KDYFUN void dylib_cleanup(void) {
 KDYFUN void render(void) {
 }
 
-KDYFUN kMat4f transform(u0) {
-    return identity();
+#include <math.h>
+
+KDYFUN kVec3f translate(u0) {
+    static f32 a = 0;
+    f32 dz = 3 * sinf(a);
+    a += 0.01f;
+
+    f32 x = 0.0f;
+    f32 y = 0.0f;
+    f32 z = -7.0f + dz;
+    return (kVec3f) { x, y, z };
 }
