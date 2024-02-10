@@ -25,7 +25,7 @@ kMat4f kMatScale4f(f32 x_scale, f32 y_scale, f32 z_scale) {
     return ret;
 }
 
-kMat4f kMatTrans4f(f32 x_trans, f32 y_trans, f32 z_trans) {
+kMat4f kMatTranslate4f(f32 x_trans, f32 y_trans, f32 z_trans) {
     kMat4f ret = kMatIdentity4f();
     ret.xy[3][0] = x_trans;
     ret.xy[3][1] = y_trans;
@@ -58,20 +58,27 @@ kMat4f kMatRotate4f(kVec3f a, f32 t) {
     return ret;
 }
 
-kMat4f kMatFrustum4f(f32 left_right, f32 top_bottom, f32 near, f32 far) {
-    assert(left_right > 0.0f);
-    assert(top_bottom > 0.0f);
+kMat4f kMatFrustum4f(f32 right, f32 top, f32 near, f32 far) {
+    assert(right > 0.0f);
+    assert(top > 0.0f);
     assert(near > 0.0f);
     assert(far > 0.0f);
-    
+
     f32 t = -1.0f / (far - near);
-    kMat4f ret = kMatScale4f(near / left_right, near / top_bottom, (far + near) * t);
+    kMat4f ret = kMatScale4f(near / right, near / top, (far + near) * t);
     ret.xy[3][2] = 2.0f * far * near * t;
-    ret.xy[2][3] = -1;
+    ret.xy[2][3] = -1.0f;
+    ret.xy[3][3] = 0.0f;
     return ret;
 }
 
-kMat4f kMatMul4f(kMat4f lhs, kMat4f rhs) {
+kMat4f kMatPerspective4f(f32 fov, f32 aspect_ratio, f32 near, f32 far) {
+    f32 top = tanf(fov * 0.5f) * near;
+    f32 right = top * aspect_ratio;
+    return kMatFrustum4f(right, top, near, far);
+}
+
+static kMat4f mul_mat4f(kMat4f lhs, kMat4f rhs) {
     kMat4f ret;
     for (int x = 0; x < 4; ++x) {
         for (int y = 0; y < 4; ++y) {
@@ -81,6 +88,14 @@ kMat4f kMatMul4f(kMat4f lhs, kMat4f rhs) {
             }
             ret.xy[x][y] = sum;
         }
+    }
+    return ret;
+}
+
+kMat4f kMatMul4fImpl(kMat4f *m, i32 amount) {
+    kMat4f ret = kMatIdentity4f();
+    for (i32 i = 0; i < amount; ++i) {
+        ret = mul_mat4f(ret, m[i]);
     }
     return ret;
 }
@@ -101,7 +116,7 @@ f32 kVecLen3f(kVec3f v) {
 }
 
 kVec3f kVecNorm3f(kVec3f v) {
-    f32 isqrt = 1.0f / kVecLen23f(v);
+    f32 isqrt = 1.0f / kVecLen3f(v);
     kVec3f ret;
     for (int i = 0; i < 3; ++i) {
         ret.e[i] = v.e[i] * isqrt;

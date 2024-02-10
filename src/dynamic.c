@@ -67,13 +67,25 @@ KDYFUN void render(void) {
 
 #include <math.h>
 
-KDYFUN kVec3f translate(u0) {
-    static f32 a = 0;
-    f32 dz = 3 * sinf(a);
-    a += 0.01f;
+KDYFUN f32 scale(u0) {
+    return 1.0f;
+}
 
+KDYFUN kVec3f translate(u0) {
     f32 x = 0.0f;
-    f32 y = 0.0f;
-    f32 z = -7.0f + dz;
-    return (kVec3f) { x, y, z };
+    f32 y = -1.5f;
+    f32 z = -10.0f;
+    return (kVec3f) {{ x, y, z }};
+}
+
+#include <math.h>
+KDYFUN kVec3f rotate_axis(u0) {
+    kVec3f v = K_VEC3F_UP;
+    return v;
+}
+
+KDYFUN f32 rotate_angle(u0) {
+    static f32 a = 0;
+    a += 0.01f;
+    return kDegf(-55.0f) + a;
 }

@@ -21,7 +21,9 @@ kRenderMesh mesh;
 kMat4f rot;
 kRenderProgram prog = {0};
 struct {
-    kMat4f mat;
+    kMat4f model;
+    kMat4f view;
+    kMat4f projection;
 } uniform;
 
 #include <Windows.h>
@@ -36,43 +38,46 @@ void kWindowUpdate(void) {
 }
 
 kDyfun dynamic_render = 0;
-kVec3f(*dynamic_translate)(u0) = 0;
+f32 (*dynamic_scale)(u0) = 0;
+kVec3f (*dynamic_translate)(u0) = 0;
+kVec3f (*dynamic_rotate_axis)(u0) = 0;
+f32 (*dynamic_rotate_angle)(u0) = 0;
 kMat4f t;
 
 float a = 0;
 void kWindowRender(void) {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     if (dynamic_render) {
         dynamic_render();
     }
 
-    // if (dynamic_transform) {
-    //     t = dynamic_transform();
-    // } else {
-    //     // t = kMatIdentity4f();
-    //     kVec3f axis = {0};
-    //     axis.x = 1.0f;
-    //     t = kMatMul4f(t, kMatRotate4f(axis, 0.001f));
-    // }
-    f32 scale = 0.3f;
-    kVec3f trans = { 0.0f, 0.0f, 0.0f };
-    if (dynamic_translate) {
-        trans = dynamic_translate();
+    f32 scale = 0.5f;
+    if (dynamic_scale) {
+        scale = dynamic_scale();
     }
-    kVec3f x_axis = {1.0f, 0.0f, 0.0f};
-    kVec3f y_axis = {0.0f, 1.0f, 0.0f};
-    kVec3f z_axis = {0.0f, 0.0f, 1.0f};
-    kMat4f m_rotate = kMatRotate4f(x_axis, kDegf(30.0f));
-    kMat4f m_trans = kMatTrans4f(trans.x, trans.y, trans.z);
     kMat4f m_scale = kMatScale4f(scale, scale, scale);
-    static f32 a = 0.0f;
-    kMat4f m_spin = kMatRotate4f(y_axis, a);
-    a += 0.01f;
-    kMat4f m_perspective = kMatFrustum4f(1.0f, 1.0f, 1.0f, 100.0f);
-    t = kMatMul4f(kMatMul4f(kMatMul4f(kMatMul4f(m_perspective,m_scale), m_trans), m_rotate), m_spin);
-    uniform.mat = t;
+
+    kVec3f translate = K_VEC3F_ZERO;
+    if (dynamic_translate) {
+        translate = dynamic_translate();
+    }
+    kMat4f m_translate = kMatTranslate4f(translate.x, translate.y, translate.z);
+
+    kVec3f rotate_axis = K_VEC3F_FORWARD;
+    if (dynamic_rotate_axis) {
+        rotate_axis = dynamic_rotate_axis();
+        rotate_axis = kVecNorm3f(rotate_axis);
+    }
+    f32 rotate_angle = 0.0f;
+    if (dynamic_rotate_angle) {
+        rotate_angle = dynamic_rotate_angle();
+    }
+    kMat4f m_rotate = kMatRotate4f(rotate_axis, rotate_angle);
+
+    uniform.model = kMatMul4f(m_translate, m_scale, m_rotate);
+
     assert(kRenderProgramUse(&prog));
     kRenderMeshDraw(&mesh);
 }
@@ -81,23 +86,22 @@ void work(void) {
     printf("Hello, World!\n");
     dylib = (kDylib) {0};
 
-
     if (kWindowCreate()) {
         kDyBindLib(&dylib, "dynamic");
         kDyBindFun(&dylib, "render", &dynamic_render);
+        kDyBindFun(&dylib, "scale", (kDyfun *) &dynamic_scale);
         kDyBindFun(&dylib, "translate", (kDyfun *) &dynamic_translate);
+        kDyBindFun(&dylib, "rotate_axis", (kDyfun *) &dynamic_rotate_axis);
+        kDyBindFun(&dylib, "rotate_angle", (kDyfun *) &dynamic_rotate_angle);
 
         assert(kRenderProgramCreate(&prog));
         assert(kRenderProgramLoad(&prog, "shaders/base"));
-        // assert(kRenderProgramBindUniform(&prog, "brightness", 1, &uniform.brightness));
-        kRenderProgramBindUniform(&prog, "uMat", 1, &uniform.mat);
+        kRenderProgramBindUniform(&prog, "uModel", 1, &uniform.model);
+        kRenderProgramBindUniform(&prog, "uView", 1, &uniform.view);
+        kRenderProgramBindUniform(&prog, "uProjection", 1, &uniform.projection);
 
-        uniform.mat = kMatIdentity4f();
-        kVec3f axis = {0};
-        axis.y = 1.0f;
-        axis = kVecNorm3f(axis);
-        rot = kMatRotate4f(axis, 0.0025f);
-        // kMatPrint4f(rot);
+        uniform.view = kMatTranslate4f(0.0f, 0.0f, -3.0f);
+        uniform.projection = kMatPerspective4f(kDegf(45.0f), 1.0f, 0.1f, 1000.0f);
 
         kRenderTexture tex;
         kRenderTextureCreate(&tex);
@@ -107,6 +111,7 @@ void work(void) {
         assert(kRenderMeshCreate(&mesh));
         assert(kRenderMeshLoad(&mesh, "res/mesh/teapot_triangles.obj"));
 
+        glEnable(GL_DEPTH_TEST);
         kWindowLoop();
 
         kRenderTextureDestroy(&tex);
@@ -119,20 +124,11 @@ void work(void) {
 
 }
 
-__declspec(dllexport) void success(void) {
-    printf("eureka!");
-}
-
-
 int main(int argc, char *argv[]) {
     (void) argc;
     (void) argv;
 
     work();
-
-    // typedef void (*fptr)(void);
-    // fptr pSuccess = (fptr) GetProcAddress(GetModuleHandle(NULL), "success");
-    // pSuccess();
 
     return 0;
 }
