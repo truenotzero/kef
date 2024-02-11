@@ -4,6 +4,8 @@
 #include <math.h>
 #include <stdio.h>
 
+#define is_normalized(v) (kVecLen23f(v) - 1.0f < 0.001f)
+
 // vector: len2, len, normalize, scalar multiplication, dot product
 // vector3f: cross product
 
@@ -17,7 +19,7 @@ kMat4f kMatIdentity4f(u0) {
     return ret;
 }
 
-kMat4f kMatScale4f(f32 x_scale, f32 y_scale, f32 z_scale) {
+kMat4f kMatScale(f32 x_scale, f32 y_scale, f32 z_scale) {
     kMat4f ret = kMatIdentity4f();
     ret.xy[0][0] = x_scale;
     ret.xy[1][1] = y_scale;
@@ -25,7 +27,7 @@ kMat4f kMatScale4f(f32 x_scale, f32 y_scale, f32 z_scale) {
     return ret;
 }
 
-kMat4f kMatTranslate4f(f32 x_trans, f32 y_trans, f32 z_trans) {
+kMat4f kMatTranslate(f32 x_trans, f32 y_trans, f32 z_trans) {
     kMat4f ret = kMatIdentity4f();
     ret.xy[3][0] = x_trans;
     ret.xy[3][1] = y_trans;
@@ -33,9 +35,9 @@ kMat4f kMatTranslate4f(f32 x_trans, f32 y_trans, f32 z_trans) {
     return ret;
 }
 
-kMat4f kMatRotate4f(kVec3f a, f32 t) {
+kMat4f kMatRotate(kVec3f a, f32 t) {
     // vector must be normalized
-    assert(kVecLen23f(a) - 1.0f < 0.001f);
+    assert(is_normalized(a));
 
     kMat4f ret = kMatIdentity4f();
     f32 x = a.x;
@@ -58,24 +60,48 @@ kMat4f kMatRotate4f(kVec3f a, f32 t) {
     return ret;
 }
 
-kMat4f kMatFrustum4f(f32 right, f32 top, f32 near, f32 far) {
+kMat4f kMatFrustum(f32 right, f32 top, f32 near, f32 far) {
     assert(right > 0.0f);
     assert(top > 0.0f);
     assert(near > 0.0f);
     assert(far > 0.0f);
 
     f32 t = -1.0f / (far - near);
-    kMat4f ret = kMatScale4f(near / right, near / top, (far + near) * t);
+    kMat4f ret = kMatScale(near / right, near / top, (far + near) * t);
     ret.xy[3][2] = 2.0f * far * near * t;
     ret.xy[2][3] = -1.0f;
     ret.xy[3][3] = 0.0f;
     return ret;
 }
 
-kMat4f kMatPerspective4f(f32 fov, f32 aspect_ratio, f32 near, f32 far) {
+kMat4f kMatPerspective(f32 fov, f32 aspect_ratio, f32 near, f32 far) {
     f32 top = tanf(fov * 0.5f) * near;
     f32 right = top * aspect_ratio;
-    return kMatFrustum4f(right, top, near, far);
+    return kMatFrustum(right, top, near, far);
+}
+
+kMat4f kMatLookAt(kVec3f pos, kVec3f look_at) {
+    assert(is_normalized(look_at));
+    // calculate the camera's right and up vectors
+    // uses the Gram-Schmidt process
+    // by convention the camera's local forward (positive z) direction is behind it
+    // we can get this by inverting the direction we're looking at
+    kVec3f forward = kVecNorm3f(kVecScale3f(-1.0f, look_at));
+    // to get the camera's right (positive x) direction
+    kVec3f right = kVecNorm3f(kVecCross3f(K_VEC3F_UP, forward));
+    kVec3f up = kVecNorm3f(kVecCross3f(forward, right));
+    kMat4f rot = kMatIdentity4f();
+    rot.xy[0][0] = right.x;
+    rot.xy[0][1] = right.y;
+    rot.xy[0][2] = right.z;
+    rot.xy[1][0] = up.x;
+    rot.xy[1][1] = up.y;
+    rot.xy[1][2] = up.z;
+    rot.xy[2][0] = forward.x;
+    rot.xy[2][1] = forward.y;
+    rot.xy[2][2] = forward.z;
+    kMat4f trans = kMatTranslate(-pos.x, -pos.y, -pos.z);
+    return kMatMul4f(rot, trans);
 }
 
 static kMat4f mul_mat4f(kMat4f lhs, kMat4f rhs) {
@@ -124,6 +150,38 @@ kVec3f kVecNorm3f(kVec3f v) {
     return ret;
 }
 
+kVec3f kVecCross3f(kVec3f lhs, kVec3f rhs) {
+    return (kVec3f) {{
+        .x = lhs.y * rhs.z - lhs.z * rhs.y,
+        .y = lhs.z * rhs.x - lhs.x * rhs.z,
+        .z = lhs.x * rhs.y - lhs.y * rhs.x,
+    }};
+}
+
+kVec3f kVecScale3f(f32 scalar, kVec3f v) {
+    return (kVec3f) {{
+        .x = scalar * v.x,
+        .y = scalar * v.y,
+        .z = scalar * v.z,
+    }};
+}
+
+kVec3f kVecAdd3f(kVec3f lhs, kVec3f rhs) {
+    return (kVec3f) {{
+        .x = lhs.x + rhs.x,
+        .y = lhs.y + rhs.y,
+        .z = lhs.z + rhs.z,
+    }};
+}
+
+kVec3f kVecSub3f(kVec3f lhs, kVec3f rhs) {
+    return (kVec3f) {{
+        .x = lhs.x - rhs.x,
+        .y = lhs.y - rhs.y,
+        .z = lhs.z - rhs.z,
+    }};
+}
+
 f32 kVecDot4f(kVec4f lhs, kVec4f rhs) {
     f32 ret = 0;
     for (int i = 0; i < 4; ++i) {
@@ -147,4 +205,22 @@ kVec4f kVecMatMul4f(kMat4f lhs, kVec4f rhs) {
 u0 kVecPrint4f(kVec4f m) {
     printf("[ %.2f %.2f %.2f %.2f ]\n", m.e[0], m.e[1], m.e[2], m.e[3]);
     printf("\n");
+}
+
+kVec4f kVecPoint4f(kVec3f v) {
+    return (kVec4f) {{
+        .x = v.x,
+        .y = v.y,
+        .z = v.z,
+        .w = 1.0f,
+    }};
+}
+
+kVec4f kVecDirection4f(kVec3f v) {
+    return (kVec4f) {{
+        .x = v.x,
+        .y = v.y,
+        .z = v.z,
+        .w = 0.0f,
+    }};
 }
