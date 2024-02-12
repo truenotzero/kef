@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <math.h>
 
 #include <dy/kdycode.h>
 #include <render/kwindow.h>
@@ -10,6 +9,7 @@
 #include <render/kprogram.h>
 #include <render/kmesh.h>
 #include <render/ktexture.h>
+#include <render/kcamera.h>
 #include "core/kmath.h"
 
 
@@ -25,6 +25,8 @@ struct {
     kMat4f view;
     kMat4f projection;
 } uniform;
+
+kCamera cam = {0};
 
 #include <Windows.h>
 //extern int GetLastError(void);
@@ -48,6 +50,7 @@ f32 (*dynamic_rotate_angle)(u0) = 0;
 // view
 kVec3f (*dynamic_cam_pos)(u0) = 0;
 kVec3f (*dynamic_cam_look_at)(u0) = 0;
+f32 (*dynamic_cam_yaw)(u0) = 0;
 
 float a = 0;
 void kWindowRender(void) {
@@ -84,16 +87,22 @@ void kWindowRender(void) {
     uniform.model = kMatMul4f(m_translate, m_scale, m_rotate);
 
 
-    kVec3f cam_pos = K_VEC3F_ZERO;
+    // kVec3f cam_pos = K_VEC3F_ZERO;
+    // if (dynamic_cam_pos) {
+    //     cam_pos = dynamic_cam_pos();
+    // }
+    // kVec3f cam_look_at = K_VEC3F_FORWARD;
+    // if (dynamic_cam_look_at) {
+    //     cam_look_at = dynamic_cam_look_at();
+    // }
+    // uniform.view = kMatLookAt(cam_pos, cam_look_at);
     if (dynamic_cam_pos) {
-        cam_pos = dynamic_cam_pos();
+        cam.pos = dynamic_cam_pos();
     }
-    kVec3f cam_look_at = K_VEC3F_FORWARD;
-    if (dynamic_cam_look_at) {
-        cam_look_at = dynamic_cam_look_at();
-        cam_look_at = kVecNorm3f(cam_look_at);
+    if (dynamic_cam_yaw) {
+        cam = kCameraAddYawPitch(cam, dynamic_cam_yaw(), 0.0f);
     }
-    uniform.view = kMatLookAt(cam_pos, cam_look_at);
+    uniform.view = kCameraViewMat(cam);
     assert(kRenderProgramUse(&prog));
     kRenderMeshDraw(&mesh);
 }
@@ -113,6 +122,7 @@ void work(void) {
 
         kDyBindFun(&dylib, "cam_pos", (kDyfun *) &dynamic_cam_pos);
         kDyBindFun(&dylib, "cam_look_at", (kDyfun *) &dynamic_cam_look_at);
+        kDyBindFun(&dylib, "cam_yaw", (kDyfun *) &dynamic_cam_yaw);
 
         assert(kRenderProgramCreate(&prog));
         assert(kRenderProgramLoad(&prog, "shaders/base"));
@@ -128,9 +138,10 @@ void work(void) {
         kRenderTextureUse(&tex);
 
         assert(kRenderMeshCreate(&mesh));
-        assert(kRenderMeshLoad(&mesh, "res/mesh/cube.obj"));
+        assert(kRenderMeshLoad(&mesh, "res/mesh/teapot_triangles.obj"));
 
         glEnable(GL_DEPTH_TEST);
+        kWindowSetCursorVisible(kfalse);
         kWindowLoop();
 
         kRenderTextureDestroy(&tex);

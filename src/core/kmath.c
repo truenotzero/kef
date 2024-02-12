@@ -80,27 +80,43 @@ kMat4f kMatPerspective(f32 fov, f32 aspect_ratio, f32 near, f32 far) {
     return kMatFrustum(right, top, near, far);
 }
 
-kMat4f kMatLookAt(kVec3f pos, kVec3f look_at) {
-    assert(is_normalized(look_at));
-    // calculate the camera's right and up vectors
+kMat4f kMatLookAt(kVec3f cam_pos, kVec3f look_pos) {
+    // calculate the camera's right and up vectors (orthonormal basis for camera space)
     // uses the Gram-Schmidt process
     // by convention the camera's local forward (positive z) direction is behind it
     // we can get this by inverting the direction we're looking at
-    kVec3f forward = kVecNorm3f(kVecScale3f(-1.0f, look_at));
-    // to get the camera's right (positive x) direction
-    kVec3f right = kVecNorm3f(kVecCross3f(K_VEC3F_UP, forward));
-    kVec3f up = kVecNorm3f(kVecCross3f(forward, right));
+    kVec3f forward = kVecNorm3f(kVecSub3f(cam_pos, look_pos));
+    printf("forward len2: %.2f\n", kVecLen23f(forward));
+    assert(is_normalized(forward));
+    kVec3f right = kVecNorm3f(kVecCrossf(K_VEC3F_UP, forward));
+    kVec3f up = kVecCrossf(forward, right);
+    assert(is_normalized(up));
+    // create a transposed rotation matrix
+    // practically, an inversed rotation matrix is needed
+    // but since the matrix is orthonormal, M^T = M^-1
+    // saving computing power
+    // the inverse is needed since the camera rotates in the opposite
+    // direction to the world
+    // the rotation (NOT THE INVERSE!) matrix can be created by mapping world space
+    // onto camera space (which is why we calculated the orthonormal basis for camera space earlier)
+    // then it's just a matter of constructing [r u f]
+    // where r,u,f are the camera space's orthonormal basis vectors
+    // and transposing it, effectively getting the inverse rotation matrix
     kMat4f rot = kMatIdentity4f();
     rot.xy[0][0] = right.x;
-    rot.xy[0][1] = right.y;
-    rot.xy[0][2] = right.z;
-    rot.xy[1][0] = up.x;
+    rot.xy[1][0] = right.y;
+    rot.xy[2][0] = right.z;
+    rot.xy[0][1] = up.x;
     rot.xy[1][1] = up.y;
-    rot.xy[1][2] = up.z;
-    rot.xy[2][0] = forward.x;
-    rot.xy[2][1] = forward.y;
+    rot.xy[2][1] = up.z;
+    rot.xy[0][2] = forward.x;
+    rot.xy[1][2] = forward.y;
     rot.xy[2][2] = forward.z;
-    kMat4f trans = kMatTranslate(-pos.x, -pos.y, -pos.z);
+    kMat4f trans = kMatTranslate(-cam_pos.x, -cam_pos.y, -cam_pos.z);
+    // to convert world space to camera space
+    // the camera is placed at 0,0,0 so the world geometry must be offset
+    // by -pos
+    // next, we apply the inverse of the camera's rotation to the world's geometry
     return kMatMul4f(rot, trans);
 }
 
@@ -150,7 +166,7 @@ kVec3f kVecNorm3f(kVec3f v) {
     return ret;
 }
 
-kVec3f kVecCross3f(kVec3f lhs, kVec3f rhs) {
+kVec3f kVecCrossf(kVec3f lhs, kVec3f rhs) {
     return (kVec3f) {{
         .x = lhs.y * rhs.z - lhs.z * rhs.y,
         .y = lhs.z * rhs.x - lhs.x * rhs.z,

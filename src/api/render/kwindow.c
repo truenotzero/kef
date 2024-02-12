@@ -54,6 +54,14 @@ void kWindowLoop(void) {
 
 }
 
+u0 kWindowSetCursorVisible(b8 is_visible) {
+    if (!is_visible && glfwRawMouseMotionSupported()) {
+        glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+    }
+    int cursor_mode = is_visible ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_HIDDEN;
+    glfwSetInputMode(window, GLFW_CURSOR, cursor_mode);
+}
+
 // impl for kgl.h
 #include <render/kgl.h>
 #include <stdio.h>

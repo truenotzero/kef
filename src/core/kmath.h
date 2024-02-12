@@ -32,9 +32,9 @@ kMat4f kMatFrustum(f32 right, f32 top, f32 near, f32 far);
 kMat4f kMatPerspective(f32 fov, f32 aspect_ratio, f32 near, f32 far);
 
 // creates a view transform matrix
-// pos is the camera's position (where to view the world from)
-// look_at is the normalized direction the camera is pointing towards
-kMat4f kMatLookAt(kVec3f pos, kVec3f look_at);
+// cam_pos is the camera's position (where to view the world from)
+// look_pos is the point in the world the camera is looking at
+kMat4f kMatLookAt(kVec3f cam_pos, kVec3f look_pos);
 
 /* matrix operations */
 
@@ -68,7 +68,7 @@ f32 kVecLen3f(kVec3f v);
 // normalize a vector, turning it into a unit vector in a direction
 kVec3f kVecNorm3f(kVec3f v);
 // cross product
-kVec3f kVecCross3f(kVec3f lhs, kVec3f rhs);
+kVec3f kVecCrossf(kVec3f lhs, kVec3f rhs);
 // scalar multiplication
 kVec3f kVecScale3f(f32 scalar, kVec3f v);
 // vector addition
