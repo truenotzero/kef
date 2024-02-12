@@ -10,9 +10,9 @@
 static kCamera calculate_base(kCamera self) {
     kVec3f f;
     f32 cos_pitch = cosf(self.r_pitch);
-    f.x = cosf(self.r_yaw) * cos_pitch;
+    f.x = sinf(self.r_yaw) * cos_pitch;
     f.y = sinf(self.r_pitch);
-    f.z = sinf(self.r_yaw) * cos_pitch;
+    f.z = cosf(self.r_yaw) * cos_pitch;
     self.r_forward = kVecNorm3f(f);
 
     self.r_right = kVecNorm3f(kVecCrossf(K_VEC3F_UP, self.r_forward));
@@ -20,16 +20,19 @@ static kCamera calculate_base(kCamera self) {
     return self;
 }
 
-kCamera kCameraAddYawPitch(kCamera self, f32 delta_yaw, f32 delta_pitch) {
-    self.r_yaw += delta_yaw;
+kCamera kCameraSetYawPitch(kCamera self, f32 yaw, f32 pitch) {
+    self.r_yaw = yaw;
     // pitch must be in the range (-90,90) for the current lookAt algorithm
     // to work properly
-    f32 new_pitch = self.r_pitch + delta_pitch; 
-    if (new_pitch > K_CAMERA_MIN_PITCH && new_pitch < K_CAMERA_MAX_PITCH) {
-        self.r_pitch = new_pitch;
+    if (pitch > K_CAMERA_MIN_PITCH && pitch < K_CAMERA_MAX_PITCH) {
+        self.r_pitch = pitch;
     }
 
     return calculate_base(self);
+}
+
+kCamera kCameraAddYawPitch(kCamera self, f32 delta_yaw, f32 delta_pitch) {
+    return kCameraSetYawPitch(self, self.r_yaw + delta_yaw, self.r_pitch + delta_pitch);
 }
 
 kMat4f kCameraViewMat(kCamera self) {

@@ -24,27 +24,28 @@ typedef char b8;
 typedef char const *c_str;
 
 typedef union kVec2f {
-    struct { float x, y; };
-    struct { float u, v; };
-    float e[1];
+    struct { f32 x, y; };
+    struct { f32 u, v; };
+    struct { f32 yaw, pitch; };
+    f32 e[1];
 } kVec2f;
 
 typedef union kVec3f {
-    struct { float x, y, z; };
-    struct { float r, g, b; };
-    float e[1];
+    struct { f32 x, y, z; };
+    struct { f32 r, g, b; };
+    f32 e[1];
 } kVec3f;
 
 typedef union kVec4f {
-    struct { float x, y, z, w; };
-    struct { float r, g, b, a; };
-    float e[1];
+    struct { f32 x, y, z, w; };
+    struct { f32 r, g, b, a; };
+    f32 e[1];
 } kVec4f;
 
 typedef union kMat4f {
-    struct { float xy[4][4]; };
+    struct { f32 xy[4][4]; };
     struct { kVec4f v[4]; };
-    float e[1];
+    f32 e[1];
 } kMat4f;
 
 enum kType {

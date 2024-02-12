@@ -3,17 +3,9 @@
 #include <GL/glew.h>
 #include <render/kgl.h>
 #include <GLFW/glfw3.h>
+#include <stdio.h>
 
 static GLFWwindow *window = 0;
-
-static void key_cb(GLFWwindow *wnd, int key, int sc, int action, int mods) {
-    (void) sc;
-    (void) mods;
-    
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        glfwSetWindowShouldClose(wnd, GLFW_TRUE);
-    }
-}
 
 static void framebuffer_size_cb(GLFWwindow *wnd, int width, int height) {
     (void) wnd;
@@ -33,7 +25,6 @@ b8 kWindowCreate(void) {
 
     if (glewInit() != GLEW_OK) return kfalse;
 
-    glfwSetKeyCallback(window, &key_cb);
 
     return ktrue;
 }
@@ -58,8 +49,12 @@ u0 kWindowSetCursorVisible(b8 is_visible) {
     if (!is_visible && glfwRawMouseMotionSupported()) {
         glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     }
-    int cursor_mode = is_visible ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_HIDDEN;
+    int cursor_mode = is_visible ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED;
     glfwSetInputMode(window, GLFW_CURSOR, cursor_mode);
+}
+
+u0 *k__windowRawHandle(u0) {
+    return window;
 }
 
 // impl for kgl.h

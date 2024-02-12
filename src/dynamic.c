@@ -116,6 +116,6 @@ KDYFUN kVec3f cam_look_at(u0) {
     return look_at;
 }
 
-KDYFUN f32 cam_yaw(u0) {
-    return 0.0000f;
+KDYFUN f32 sensitivity(u0) {
+    return 0.0006f;
 }

@@ -10,8 +10,10 @@
 #include <render/kmesh.h>
 #include <render/ktexture.h>
 #include <render/kcamera.h>
+#include <input/kkey.h>
 #include "core/kmath.h"
 
+#include <GLFW/glfw3.h>
 
 // TODO
 // vertex attribute bindings too...
@@ -27,6 +29,7 @@ struct {
 } uniform;
 
 kCamera cam = {0};
+extern GLFWwindow *window;
 
 #include <Windows.h>
 //extern int GetLastError(void);
@@ -50,7 +53,7 @@ f32 (*dynamic_rotate_angle)(u0) = 0;
 // view
 kVec3f (*dynamic_cam_pos)(u0) = 0;
 kVec3f (*dynamic_cam_look_at)(u0) = 0;
-f32 (*dynamic_cam_yaw)(u0) = 0;
+f32 (*dynamic_sensitivity)(u0) = 0;
 
 float a = 0;
 void kWindowRender(void) {
@@ -96,12 +99,36 @@ void kWindowRender(void) {
     //     cam_look_at = dynamic_cam_look_at();
     // }
     // uniform.view = kMatLookAt(cam_pos, cam_look_at);
-    if (dynamic_cam_pos) {
-        cam.pos = dynamic_cam_pos();
+    const float yawSpeed = 0.01f;
+    kVec3f moveDirection = {0};
+    if (kKeyIsPressed(K_KEY_W)) {
+        moveDirection = kVecSub3f(moveDirection, cam.r_forward);
+    } else if (kKeyIsPressed(K_KEY_S)) {
+        moveDirection = kVecAdd3f(moveDirection, cam.r_forward);
+    } else if (kKeyIsPressed(K_KEY_A)) {
+        moveDirection = kVecSub3f(moveDirection, cam.r_right);
+        // cam = kCameraAddYawPitch(cam, +yawSpeed, 0.0f);
+    } else if (kKeyIsPressed(K_KEY_D)) {
+        moveDirection = kVecAdd3f(moveDirection, cam.r_right);
+        // cam = kCameraAddYawPitch(cam, -yawSpeed, 0.0f);
     }
-    if (dynamic_cam_yaw) {
-        cam = kCameraAddYawPitch(cam, dynamic_cam_yaw(), 0.0f);
+    static const f32 moveSpeed = 0.1f;
+    if (!kVecIsZero3f(moveDirection)) {
+        kVec3f deltaPos = kVecScale3f(moveSpeed, kVecNorm3f(moveDirection));
+        cam.pos = kVecAdd3f(cam.pos, deltaPos);
     }
+    static kVec2f last_mouse_pos = {{-1, -1}};
+    kVec2f mouse_pos = kMousePos();
+    if (last_mouse_pos.x != -1 && last_mouse_pos.y != -1) {
+        kVec2f delta_mouse = kVecSub(mouse_pos, last_mouse_pos);
+        const f32 degsPerPixel = dynamic_sensitivity();
+        kVec2f delta_view_angle = kVecScale(degsPerPixel, delta_mouse);
+        cam = kCameraAddYawPitch(cam, -delta_view_angle.yaw, delta_view_angle.pitch);
+    }
+    last_mouse_pos = mouse_pos;
+    
+    f32 yawDeg = cam.r_yaw * (180.0f / K_PIF);
+    printf("x,y,z(%.2f,%.2f,%.2f) yaw(%.2f)\n", cam.pos.x, cam.pos.y, cam.pos.z, yawDeg);
     uniform.view = kCameraViewMat(cam);
     assert(kRenderProgramUse(&prog));
     kRenderMeshDraw(&mesh);
@@ -110,6 +137,12 @@ void kWindowRender(void) {
 void work(void) {
     printf("Hello, World!\n");
     dylib = (kDylib) {0};
+
+    cam.pos.x = 0.0f;
+    cam.pos.y = 0.0f;
+    cam.pos.z = 3.0f;
+
+    // cam = kCameraSetYawPitch(cam, kDegf(-90.0f), 0.0f);
 
     if (kWindowCreate()) {
         kDyBindLib(&dylib, "dynamic");
@@ -122,7 +155,7 @@ void work(void) {
 
         kDyBindFun(&dylib, "cam_pos", (kDyfun *) &dynamic_cam_pos);
         kDyBindFun(&dylib, "cam_look_at", (kDyfun *) &dynamic_cam_look_at);
-        kDyBindFun(&dylib, "cam_yaw", (kDyfun *) &dynamic_cam_yaw);
+        kDyBindFun(&dylib, "sensitivity", (kDyfun *) &dynamic_sensitivity);
 
         assert(kRenderProgramCreate(&prog));
         assert(kRenderProgramLoad(&prog, "shaders/base"));
@@ -142,6 +175,7 @@ void work(void) {
 
         glEnable(GL_DEPTH_TEST);
         kWindowSetCursorVisible(kfalse);
+        kKeyboardEnable();
         kWindowLoop();
 
         kRenderTextureDestroy(&tex);

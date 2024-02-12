@@ -70,10 +70,20 @@ kVec3f kVecNorm3f(kVec3f v);
 // cross product
 kVec3f kVecCrossf(kVec3f lhs, kVec3f rhs);
 // scalar multiplication
+#define kVecScale(scalar, v) _Generic(v \
+    , kVec2f: kVecScale2f \
+    , kVec3f: kVecScale3f \
+    )(scalar, v)
+kVec2f kVecScale2f(f32 scalar, kVec2f v);
 kVec3f kVecScale3f(f32 scalar, kVec3f v);
 // vector addition
 kVec3f kVecAdd3f(kVec3f lhs, kVec3f rhs);
 // vector subtraction
+#define kVecSub(lhs, rhs) _Generic(lhs \
+    , kVec2f: kVecSub2f \
+    , kVec3f: kVecSub3f \
+    )(lhs, rhs)
+kVec2f kVecSub2f(kVec2f lhs, kVec2f rhs);
 kVec3f kVecSub3f(kVec3f lhs, kVec3f rhs);
 
 // dot product
@@ -87,6 +97,10 @@ u0 kVecPrint4f(kVec4f m);
 // 3f to 4f conversion functions
 kVec4f kVecPoint4f(kVec3f v);
 kVec4f kVecDirection4f(kVec3f v);
+
+// helper functions
+b8 kVecIsUnit3f(kVec3f v);
+b8 kVecIsZero3f(kVec3f v);
 
 #endif // KMATH_H_
 

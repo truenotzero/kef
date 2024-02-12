@@ -13,4 +13,6 @@ u0 kWindowSetCursorVisible(b8 is_visible);
 extern void kWindowUpdate(void);
 extern void kWindowRender(void);
 
+u0 *k__windowRawHandle(u0);
+
 #endif // KWINDOW_H_

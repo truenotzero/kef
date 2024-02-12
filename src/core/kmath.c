@@ -174,6 +174,13 @@ kVec3f kVecCrossf(kVec3f lhs, kVec3f rhs) {
     }};
 }
 
+kVec2f kVecScale2f(f32 scalar, kVec2f v) {
+    return (kVec2f) {{
+        .x = scalar * v.x,
+        .y = scalar * v.y,
+    }};
+}
+
 kVec3f kVecScale3f(f32 scalar, kVec3f v) {
     return (kVec3f) {{
         .x = scalar * v.x,
@@ -187,6 +194,13 @@ kVec3f kVecAdd3f(kVec3f lhs, kVec3f rhs) {
         .x = lhs.x + rhs.x,
         .y = lhs.y + rhs.y,
         .z = lhs.z + rhs.z,
+    }};
+}
+
+kVec2f kVecSub2f(kVec2f lhs, kVec2f rhs) {
+    return (kVec2f) {{
+        .x = lhs.x - rhs.x,
+        .y = lhs.y - rhs.y,
     }};
 }
 
@@ -239,4 +253,14 @@ kVec4f kVecDirection4f(kVec3f v) {
         .z = v.z,
         .w = 0.0f,
     }};
+}
+
+#define K_EPS 0.001f
+
+b8 kVecIsUnit3f(kVec3f v) {
+    return (kVecLen23f(v) - 1.0f) < K_EPS;
+}
+
+b8 kVecIsZero3f(kVec3f v) {
+    return kVecLen23f(v) < K_EPS;
 }

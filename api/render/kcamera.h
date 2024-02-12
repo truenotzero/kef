@@ -14,6 +14,10 @@ typedef struct kCamera {
 
 // +yaw is left (ccw)
 // +pitch is up
+// sets the camera's view angles
+// pitch must be in the range (-90,90)
+// invalid view angle inputs won't change the current view angle
+kCamera kCameraSetYawPitch(kCamera self, f32 yaw, f32 pitch);
 kCamera kCameraAddYawPitch(kCamera self, f32 delta_yaw, f32 delta_pitch);
 
 kMat4f kCameraViewMat(kCamera self);
