@@ -115,9 +115,10 @@ KDYFUN f32 sensitivity(u0) {
 }
 
 KDYFUN kVec3f global_light(u0) {
+    f32 grayscale = 1.0f;
     kVec3f light;
-    light.r = 1.0f;
-    light.g = 0.6f;
-    light.b = 0.3f;
+    light.r = grayscale; 
+    light.g = grayscale; 
+    light.b = grayscale; 
     return light;
 }

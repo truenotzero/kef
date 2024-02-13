@@ -13,35 +13,29 @@
 #include <input/kkey.h>
 #include "core/kmath.h"
 
-#include <GLFW/glfw3.h>
-
-// TODO
-// vertex attribute bindings too...
-
 kDylib dylib;
-kRenderMesh mesh;
-kMat4f rot;
-kRenderProgram prog = {0};
+
 struct {
-    kMat4f model;
     kMat4f view;
     kMat4f proj;
-    kVec3f global_light;
-} uniform;
+} common;
+
+kRenderMesh tea_mesh;
+kRenderProgram tea_prog = {0};
+struct {
+    kMat4f model;
+    kVec3f global_light_col;
+    kVec3f global_light_pos;
+    kVec3f view_pos;
+} tea_uniform;
+
+kRenderMesh light_mesh;
+kRenderProgram light_prog = {0};
+struct {
+    kMat4f model;
+} light_uniform;
 
 kCamera cam = {0};
-extern GLFWwindow *window;
-
-#include <Windows.h>
-//extern int GetLastError(void);
-
-void kWindowUpdate(void) {
-    if (!kDyRequestReload(&dylib)) {
-        int last_err = GetLastError();
-        printf("Failed to dynamic reload: %d\n", last_err);
-        exit(1);
-    }
-}
 
 kDyfun dynamic_render = 0;
 
@@ -58,40 +52,10 @@ f32 (*dynamic_sensitivity)(u0) = 0;
 // global illumination
 kVec3f (*dynamic_global_light)(u0) = 0;
 
-float a = 0;
-void kWindowRender(void) {
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+extern int GetLastError(void);
 
-    if (dynamic_render) {
-        dynamic_render();
-    }
-
-    f32 scale = 0.5f;
-    if (dynamic_scale) {
-        scale = dynamic_scale();
-    }
-    kMat4f m_scale = kMatScale(scale, scale, scale);
-
-    kVec3f translate = K_VEC3F_ZERO;
-    if (dynamic_translate) {
-        translate = dynamic_translate();
-    }
-    kMat4f m_translate = kMatTranslate(translate.x, translate.y, translate.z);
-
-    kVec3f rotate_axis = K_VEC3F_FORWARD;
-    if (dynamic_rotate_axis) {
-        rotate_axis = dynamic_rotate_axis();
-        rotate_axis = kVecNorm3f(rotate_axis);
-    }
-    f32 rotate_angle = 0.0f;
-    if (dynamic_rotate_angle) {
-        rotate_angle = dynamic_rotate_angle();
-    }
-    kMat4f m_rotate = kMatRotate(rotate_axis, rotate_angle);
-
-    uniform.model = kMatMul4f(m_translate, m_scale, m_rotate);
-
+// handles camera movement
+static kVec3f cam_move(u0) {
     kVec3f moveDirection = {0};
     if (kKeyIsPressed(K_KEY_W)) {
         moveDirection = kVecSub3f(moveDirection, cam.r_forward);
@@ -114,9 +78,70 @@ void kWindowRender(void) {
 
     if (!kVecIsZero3f(moveDirection)) {
         f32 moveSpeed = dynamic_move_speed();
-        kVec3f deltaPos = kVecScale3f(moveSpeed, kVecNorm3f(moveDirection));
-        cam.pos = kVecAdd3f(cam.pos, deltaPos);
+        moveDirection = kVecScale3f(moveSpeed, kVecNorm3f(moveDirection));
     }
+    return moveDirection;
+}
+
+void kWindowUpdate(void) {
+    if (!kDyRequestReload(&dylib)) {
+        int last_err = GetLastError();
+        printf("Failed to dynamic reload: %d\n", last_err);
+        exit(1);
+    }
+
+    // update camera movement
+    cam.pos = kVecAdd3f(cam.pos, cam_move());
+
+}
+
+#include <math.h>
+
+static u0 render_light(u0) {
+    f32 scale = 0.15f;
+    kMat4f m_scale = kMatScale(scale, scale, scale);
+
+    kVec3f translate = K_VEC3F_UP;
+    translate = kVecScale3f(10.0f, translate);
+    static f32 a = 0.0f;
+    f32 radius = 10.0f;
+    translate.x = radius * sinf(a);
+    translate.z = radius * cosf(a);
+    a += 0.01f;
+    kMat4f m_translate = kMatTranslate(translate.x, translate.y, translate.z);
+    light_uniform.model = kMatMul4f(m_translate, m_scale);
+    tea_uniform.global_light_pos = translate;
+
+    assert(kRenderProgramUse(&light_prog));
+    kRenderMeshDraw(&light_mesh);
+}
+
+static u0 render_tea(u0) {
+    f32 scale = 1.0f;
+    kMat4f m_scale = kMatScale(scale, scale, scale);
+
+    kVec3f translate = K_VEC3F_ZERO;
+    kMat4f m_translate = kMatTranslate(translate.x, translate.y, translate.z);
+    tea_uniform.model = kMatMul4f(m_translate, m_scale);
+
+    if (dynamic_global_light) {
+        tea_uniform.global_light_col = dynamic_global_light();
+    }
+
+    assert(kRenderProgramUse(&tea_prog));
+    kRenderMeshDraw(&tea_mesh);
+}
+
+float a = 0;
+void kWindowRender(void) {
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    if (dynamic_render) {
+        dynamic_render();
+    }
+
+
     static kVec2f last_mouse_pos = {{-1, -1}};
     kVec2f mouse_pos = kMousePos();
     if (last_mouse_pos.x != -1 && last_mouse_pos.y != -1) {
@@ -127,16 +152,11 @@ void kWindowRender(void) {
     }
     last_mouse_pos = mouse_pos;
     
-    f32 yawDeg = cam.r_yaw * (180.0f / K_PIF);
-    printf("x,y,z(%.2f,%.2f,%.2f) yaw(%.2f)\n", cam.pos.x, cam.pos.y, cam.pos.z, yawDeg);
-    uniform.view = kCameraViewMat(cam);
-
-    if (dynamic_global_light) {
-        uniform.global_light = dynamic_global_light();
-    }
-
-    assert(kRenderProgramUse(&prog));
-    kRenderMeshDraw(&mesh);
+    tea_uniform.view_pos = cam.pos;
+    common.view = kCameraViewMat(cam);
+    common.proj = kMatPerspective(kDegf(45.0f), 1.0f, 0.1f, 1000.0f);
+    render_light();
+    render_tea();
 }
 
 void work(void) {
@@ -163,32 +183,41 @@ void work(void) {
 
         kDyBindFun(&dylib, "global_light", (kDyfun *) &dynamic_global_light);
 
-        assert(kRenderProgramCreate(&prog));
-        assert(kRenderProgramLoad(&prog, "res/shader/base"));
-        kRenderProgramBindUniform(&prog, "uModel", 1, &uniform.model);
-        kRenderProgramBindUniform(&prog, "uView", 1, &uniform.view);
-        kRenderProgramBindUniform(&prog, "uProj", 1, &uniform.proj);
-        kRenderProgramBindUniform(&prog, "uGlobalLight", 1, &uniform.global_light);
-        uniform.global_light = (kVec3f) {0};
+        assert(kRenderProgramCreate(&tea_prog));
+        assert(kRenderProgramLoad(&tea_prog, "res/shader/base"));
+        kRenderProgramBindUniform(&tea_prog, "uModel", 1, &tea_uniform.model);
+        kRenderProgramBindUniform(&tea_prog, "uGlobalLightCol", 1, &tea_uniform.global_light_col);
+        kRenderProgramBindUniform(&tea_prog, "uGlobalLightPos", 1, &tea_uniform.global_light_pos);
+        kRenderProgramBindUniform(&tea_prog, "uView", 1, &common.view);
+        kRenderProgramBindUniform(&tea_prog, "uProj", 1, &common.proj);
 
-        uniform.proj = kMatPerspective(kDegf(45.0f), 1.0f, 0.1f, 1000.0f);
+        assert(kRenderProgramCreate(&light_prog));
+        assert(kRenderProgramLoad(&light_prog, "res/shader/light"));
+        kRenderProgramBindUniform(&light_prog, "uModel", 1, &light_uniform.model);
+        kRenderProgramBindUniform(&light_prog, "uView", 1, &common.view);
+        kRenderProgramBindUniform(&light_prog, "uProj", 1, &common.proj);
 
-        kRenderTexture tex;
-        kRenderTextureCreate(&tex);
-        kRenderTextureLoad(&tex, "res/tex/wall_arrow.png");
+        // kRenderTexture tex;
+        // kRenderTextureCreate(&tex);
+        // kRenderTextureLoad(&tex, "res/tex/wall_arrow.png");
         // kRenderTextureUse(&tex);
 
-        assert(kRenderMeshCreate(&mesh));
-        assert(kRenderMeshLoad(&mesh, "res/mesh/bulb.obj"));
+        assert(kRenderMeshCreate(&light_mesh));
+        assert(kRenderMeshLoad(&light_mesh, "res/mesh/bulb.obj"));
+
+        assert(kRenderMeshCreate(&tea_mesh));
+        assert(kRenderMeshLoad(&tea_mesh, "res/mesh/teapot_smooth.obj"));
 
         glEnable(GL_DEPTH_TEST);
         kWindowSetCursorVisible(kfalse);
         kKeyboardEnable();
         kWindowLoop();
 
-        kRenderTextureDestroy(&tex);
-        kRenderProgramDestroy(&prog);
-        kRenderMeshDestroy(&mesh);
+        // kRenderTextureDestroy(&tex);
+        kRenderProgramDestroy(&tea_prog);
+        kRenderProgramDestroy(&light_prog);
+        kRenderMeshDestroy(&tea_mesh);
+        kRenderMeshDestroy(&light_mesh);
     }
 
     kDyCleanup(&dylib);
