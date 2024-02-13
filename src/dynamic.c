@@ -48,7 +48,6 @@ struct vertex {
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-#include <assert.h>
 typedef kMat4f (*kMatIdentity4f_t)(u0);
 kMatIdentity4f_t identity = 0;
 
@@ -107,15 +106,18 @@ KDYFUN kVec3f cam_pos(u0) {
     }};
 }
 
-KDYFUN kVec3f cam_look_at(u0) {
-    kVec3f look_at = (kVec3f) {{
-        .x = 0.0f,
-        .y = 0.0f,
-        .z = 0.0f,
-    }};
-    return look_at;
+KDYFUN f32 move_speed(u0) {
+    return 0.05f;
 }
 
 KDYFUN f32 sensitivity(u0) {
     return 0.0006f;
+}
+
+KDYFUN kVec3f global_light(u0) {
+    kVec3f light;
+    light.r = 1.0f;
+    light.g = 0.6f;
+    light.b = 0.3f;
+    return light;
 }

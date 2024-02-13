@@ -25,7 +25,8 @@ kRenderProgram prog = {0};
 struct {
     kMat4f model;
     kMat4f view;
-    kMat4f projection;
+    kMat4f proj;
+    kVec3f global_light;
 } uniform;
 
 kCamera cam = {0};
@@ -51,9 +52,11 @@ kVec3f (*dynamic_rotate_axis)(u0) = 0;
 f32 (*dynamic_rotate_angle)(u0) = 0;
 
 // view
-kVec3f (*dynamic_cam_pos)(u0) = 0;
-kVec3f (*dynamic_cam_look_at)(u0) = 0;
+f32 (*dynamic_move_speed)(u0) = 0;
 f32 (*dynamic_sensitivity)(u0) = 0;
+
+// global illumination
+kVec3f (*dynamic_global_light)(u0) = 0;
 
 float a = 0;
 void kWindowRender(void) {
@@ -89,31 +92,28 @@ void kWindowRender(void) {
 
     uniform.model = kMatMul4f(m_translate, m_scale, m_rotate);
 
-
-    // kVec3f cam_pos = K_VEC3F_ZERO;
-    // if (dynamic_cam_pos) {
-    //     cam_pos = dynamic_cam_pos();
-    // }
-    // kVec3f cam_look_at = K_VEC3F_FORWARD;
-    // if (dynamic_cam_look_at) {
-    //     cam_look_at = dynamic_cam_look_at();
-    // }
-    // uniform.view = kMatLookAt(cam_pos, cam_look_at);
-    const float yawSpeed = 0.01f;
     kVec3f moveDirection = {0};
     if (kKeyIsPressed(K_KEY_W)) {
         moveDirection = kVecSub3f(moveDirection, cam.r_forward);
-    } else if (kKeyIsPressed(K_KEY_S)) {
-        moveDirection = kVecAdd3f(moveDirection, cam.r_forward);
-    } else if (kKeyIsPressed(K_KEY_A)) {
-        moveDirection = kVecSub3f(moveDirection, cam.r_right);
-        // cam = kCameraAddYawPitch(cam, +yawSpeed, 0.0f);
-    } else if (kKeyIsPressed(K_KEY_D)) {
-        moveDirection = kVecAdd3f(moveDirection, cam.r_right);
-        // cam = kCameraAddYawPitch(cam, -yawSpeed, 0.0f);
     }
-    static const f32 moveSpeed = 0.1f;
+    if (kKeyIsPressed(K_KEY_S)) {
+        moveDirection = kVecAdd3f(moveDirection, cam.r_forward);
+    }
+    if (kKeyIsPressed(K_KEY_A)) {
+        moveDirection = kVecSub3f(moveDirection, cam.r_right);
+    }
+    if (kKeyIsPressed(K_KEY_D)) {
+        moveDirection = kVecAdd3f(moveDirection, cam.r_right);
+    } 
+    if (kKeyIsPressed(K_KEY_SPACE)) {
+        moveDirection = kVecAdd3f(moveDirection, cam.r_up);
+    }
+    if (kKeyIsPressed(K_KEY_LCTRL)) {
+        moveDirection = kVecSub3f(moveDirection, cam.r_up);
+    }
+
     if (!kVecIsZero3f(moveDirection)) {
+        f32 moveSpeed = dynamic_move_speed();
         kVec3f deltaPos = kVecScale3f(moveSpeed, kVecNorm3f(moveDirection));
         cam.pos = kVecAdd3f(cam.pos, deltaPos);
     }
@@ -130,6 +130,11 @@ void kWindowRender(void) {
     f32 yawDeg = cam.r_yaw * (180.0f / K_PIF);
     printf("x,y,z(%.2f,%.2f,%.2f) yaw(%.2f)\n", cam.pos.x, cam.pos.y, cam.pos.z, yawDeg);
     uniform.view = kCameraViewMat(cam);
+
+    if (dynamic_global_light) {
+        uniform.global_light = dynamic_global_light();
+    }
+
     assert(kRenderProgramUse(&prog));
     kRenderMeshDraw(&mesh);
 }
@@ -153,25 +158,28 @@ void work(void) {
         kDyBindFun(&dylib, "rotate_axis", (kDyfun *) &dynamic_rotate_axis);
         kDyBindFun(&dylib, "rotate_angle", (kDyfun *) &dynamic_rotate_angle);
 
-        kDyBindFun(&dylib, "cam_pos", (kDyfun *) &dynamic_cam_pos);
-        kDyBindFun(&dylib, "cam_look_at", (kDyfun *) &dynamic_cam_look_at);
+        kDyBindFun(&dylib, "move_speed", (kDyfun *) &dynamic_move_speed);
         kDyBindFun(&dylib, "sensitivity", (kDyfun *) &dynamic_sensitivity);
 
+        kDyBindFun(&dylib, "global_light", (kDyfun *) &dynamic_global_light);
+
         assert(kRenderProgramCreate(&prog));
-        assert(kRenderProgramLoad(&prog, "shaders/base"));
+        assert(kRenderProgramLoad(&prog, "res/shader/base"));
         kRenderProgramBindUniform(&prog, "uModel", 1, &uniform.model);
         kRenderProgramBindUniform(&prog, "uView", 1, &uniform.view);
-        kRenderProgramBindUniform(&prog, "uProjection", 1, &uniform.projection);
+        kRenderProgramBindUniform(&prog, "uProj", 1, &uniform.proj);
+        kRenderProgramBindUniform(&prog, "uGlobalLight", 1, &uniform.global_light);
+        uniform.global_light = (kVec3f) {0};
 
-        uniform.projection = kMatPerspective(kDegf(45.0f), 1.0f, 0.1f, 1000.0f);
+        uniform.proj = kMatPerspective(kDegf(45.0f), 1.0f, 0.1f, 1000.0f);
 
         kRenderTexture tex;
         kRenderTextureCreate(&tex);
         kRenderTextureLoad(&tex, "res/tex/wall_arrow.png");
-        kRenderTextureUse(&tex);
+        // kRenderTextureUse(&tex);
 
         assert(kRenderMeshCreate(&mesh));
-        assert(kRenderMeshLoad(&mesh, "res/mesh/teapot_triangles.obj"));
+        assert(kRenderMeshLoad(&mesh, "res/mesh/bulb.obj"));
 
         glEnable(GL_DEPTH_TEST);
         kWindowSetCursorVisible(kfalse);

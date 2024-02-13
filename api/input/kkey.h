@@ -5,6 +5,7 @@
 
 enum kKeyCode {
     K_KEY_W = 17,
+    K_KEY_LCTRL = 29,
     K_KEY_A = 30,
     K_KEY_S = 31,
     K_KEY_D = 32,
