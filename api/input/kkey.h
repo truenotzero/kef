@@ -9,6 +9,7 @@ enum kKeyCode {
     K_KEY_A = 30,
     K_KEY_S = 31,
     K_KEY_D = 32,
+    K_KEY_LSHIFT = 42,
     K_KEY_SPACE = 57,
     K_LAST_KEY,
 };

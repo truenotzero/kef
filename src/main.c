@@ -20,14 +20,14 @@ struct {
     kMat4f proj;
 } common;
 
-kRenderMesh tea_mesh;
-kRenderProgram tea_prog = {0};
+kRenderMesh tea_mesh, plane_mesh;
+kRenderProgram obj_prog = {0};
 struct {
     kMat4f model;
     kVec3f global_light_col;
     kVec3f global_light_pos;
     kVec3f view_pos;
-} tea_uniform;
+} obj_uniform;
 
 kRenderMesh light_mesh;
 kRenderProgram light_prog = {0};
@@ -78,6 +78,9 @@ static kVec3f cam_move(u0) {
 
     if (!kVecIsZero3f(moveDirection)) {
         f32 moveSpeed = dynamic_move_speed();
+        if (kKeyIsPressed(K_KEY_LSHIFT)) {
+            moveSpeed *= 3.0f;
+        }
         moveDirection = kVecScale3f(moveSpeed, kVecNorm3f(moveDirection));
     }
     return moveDirection;
@@ -110,10 +113,27 @@ static u0 render_light(u0) {
     a += 0.01f;
     kMat4f m_translate = kMatTranslate(translate.x, translate.y, translate.z);
     light_uniform.model = kMatMul4f(m_translate, m_scale);
-    tea_uniform.global_light_pos = translate;
+
+    if (dynamic_global_light) {
+        obj_uniform.global_light_col = dynamic_global_light();
+    }
+
+    obj_uniform.global_light_pos = translate;
 
     assert(kRenderProgramUse(&light_prog));
     kRenderMeshDraw(&light_mesh);
+}
+
+static u0 render_plane(u0) {
+    f32 scale = 100.0f;
+    kMat4f m_scale = kMatScale(scale, scale, scale);
+
+    kVec3f translate = K_VEC3F_ZERO;
+    kMat4f m_translate = kMatTranslate(translate.x, translate.y, translate.z);
+    obj_uniform.model = kMatMul4f(m_translate, m_scale);
+
+    assert(kRenderProgramUse(&obj_prog));
+    kRenderMeshDraw(&plane_mesh);
 }
 
 static u0 render_tea(u0) {
@@ -122,13 +142,9 @@ static u0 render_tea(u0) {
 
     kVec3f translate = K_VEC3F_ZERO;
     kMat4f m_translate = kMatTranslate(translate.x, translate.y, translate.z);
-    tea_uniform.model = kMatMul4f(m_translate, m_scale);
+    obj_uniform.model = kMatMul4f(m_translate, m_scale);
 
-    if (dynamic_global_light) {
-        tea_uniform.global_light_col = dynamic_global_light();
-    }
-
-    assert(kRenderProgramUse(&tea_prog));
+    assert(kRenderProgramUse(&obj_prog));
     kRenderMeshDraw(&tea_mesh);
 }
 
@@ -152,10 +168,11 @@ void kWindowRender(void) {
     }
     last_mouse_pos = mouse_pos;
     
-    tea_uniform.view_pos = cam.pos;
+    obj_uniform.view_pos = cam.pos;
     common.view = kCameraViewMat(cam);
     common.proj = kMatPerspective(kDegf(45.0f), 1.0f, 0.1f, 1000.0f);
     render_light();
+    render_plane();
     render_tea();
 }
 
@@ -183,16 +200,16 @@ void work(void) {
 
         kDyBindFun(&dylib, "global_light", (kDyfun *) &dynamic_global_light);
 
-        assert(kRenderProgramCreate(&tea_prog));
-        assert(kRenderProgramLoad(&tea_prog, "res/shader/base"));
-        kRenderProgramBindUniform(&tea_prog, "uModel", 1, &tea_uniform.model);
-        kRenderProgramBindUniform(&tea_prog, "uGlobalLightCol", 1, &tea_uniform.global_light_col);
-        kRenderProgramBindUniform(&tea_prog, "uGlobalLightPos", 1, &tea_uniform.global_light_pos);
-        kRenderProgramBindUniform(&tea_prog, "uView", 1, &common.view);
-        kRenderProgramBindUniform(&tea_prog, "uProj", 1, &common.proj);
+        assert(kRenderProgramCreate(&obj_prog));
+        assert(kRenderProgramLoad(&obj_prog, "res/shader/phong"));
+        kRenderProgramBindUniform(&obj_prog, "uModel", 1, &obj_uniform.model);
+        kRenderProgramBindUniform(&obj_prog, "uGlobalLightCol", 1, &obj_uniform.global_light_col);
+        kRenderProgramBindUniform(&obj_prog, "uGlobalLightPos", 1, &obj_uniform.global_light_pos);
+        kRenderProgramBindUniform(&obj_prog, "uView", 1, &common.view);
+        kRenderProgramBindUniform(&obj_prog, "uProj", 1, &common.proj);
 
         assert(kRenderProgramCreate(&light_prog));
-        assert(kRenderProgramLoad(&light_prog, "res/shader/light"));
+        assert(kRenderProgramLoad(&light_prog, "res/shader/point_light"));
         kRenderProgramBindUniform(&light_prog, "uModel", 1, &light_uniform.model);
         kRenderProgramBindUniform(&light_prog, "uView", 1, &common.view);
         kRenderProgramBindUniform(&light_prog, "uProj", 1, &common.proj);
@@ -208,14 +225,19 @@ void work(void) {
         assert(kRenderMeshCreate(&tea_mesh));
         assert(kRenderMeshLoad(&tea_mesh, "res/mesh/teapot_smooth.obj"));
 
+        assert(kRenderMeshCreate(&plane_mesh));
+        assert(kRenderMeshLoad(&plane_mesh, "res/mesh/plane.obj"));
+
         glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
         kWindowSetCursorVisible(kfalse);
         kKeyboardEnable();
         kWindowLoop();
 
         // kRenderTextureDestroy(&tex);
-        kRenderProgramDestroy(&tea_prog);
+        kRenderProgramDestroy(&obj_prog);
         kRenderProgramDestroy(&light_prog);
+        kRenderMeshDestroy(&plane_mesh);
         kRenderMeshDestroy(&tea_mesh);
         kRenderMeshDestroy(&light_mesh);
     }
