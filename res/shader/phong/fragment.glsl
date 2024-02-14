@@ -17,6 +17,13 @@ struct material {
     float shiny;
 };
 
+vec3 diffuse(vec3 ld, vec3 vd, vec3 n, float ambient_strength, vec3 ambient_color, float diffuse_strength, vec3 diffuse_color) {
+    vec3 diff = max(dot(n, ld), 0.0f) * diffuse_strength * diffuse_color;
+    vec3 ambi = ambient_strength * ambient_color;
+
+    return ambi + diff;
+}
+
 // calculates lighting values based on the phong shading model
 // ld is the normalized light direction (from the light to the fragment)
 // n is the normalized surface normal
@@ -27,10 +34,17 @@ vec3 phong(vec3 ld, vec3 vd, vec3 n, float ambient_strength, vec3 ambient_color,
 
     float sh = 128.0f * shininess;
     vec3 spec = pow(max(dot(vd, rd), 0.0f), sh) * specular_strength * specular_color;
-    vec3 diff = max(dot(n, ld), 0.0f) * diffuse_strength * diffuse_color;
-    vec3 ambi = ambient_strength * ambient_color;
 
-    return ambi + diff + spec;
+    return diffuse(ld, vd, n, ambient_strength, ambient_color, diffuse_strength, diffuse_color) + spec;
+}
+
+vec3 blinn_phong(vec3 ld, vec3 vd, vec3 n, float ambient_strength, vec3 ambient_color, float diffuse_strength, vec3 diffuse_color, float specular_strength, vec3 specular_color, float shininess) {
+    vec3 h = normalize(ld + vd);
+
+    float sh = 128.0f * shininess;
+    vec3 spec = pow(max(dot(n, h), 0.0f), sh) * specular_strength * specular_color;
+
+    return diffuse(ld, vd, n, ambient_strength, ambient_color, diffuse_strength, diffuse_color) + spec;
 }
 
 // attenuates light based on distance
@@ -58,7 +72,7 @@ void main() {
     // view direction
     vec3 vd = normalize(uViewPos - worldPos);
 
-    vec3 p = phong(ld, vd, n, 0.2f, uGlobalLightCol, 1.0f, uGlobalLightCol, 1.0f, uGlobalLightCol, 0.25f);
+    vec3 p = blinn_phong(ld, vd, n, 0.2f, uGlobalLightCol, 1.0f, uGlobalLightCol, 1.0f, uGlobalLightCol, 0.75f);
 
     // reflection direction
     // vec3 rd = reflect(ld, n);
@@ -74,8 +88,8 @@ void main() {
     // vec3 light = (ambient + diffuse + specular) * uGlobalLightCol * objCol;
     vec3 light = p * objCol;
     // light = attenuate(light, light_direction, 1.0f, 0.0014f, 0.000007f); // 3250 range
-    light = attenuate(light, light_direction, 1.0f, 0.027f, 0.0028f); // 160 range
+    // light = attenuate(light, light_direction, 1.0f, 0.027f, 0.0028f); // 160 range
     // light = attenuate(light, light_direction, 1.0f, 0.07f, 0.0017f); // 65 range
-    // light = attenuate(light, light_direction, 1.0f, 0.14f, 0.07f); // 32 range
+    light = attenuate(light, light_direction, 1.0f, 0.14f, 0.07f); // 32 range
     fragCol = vec4(light, 1.0f);
 }

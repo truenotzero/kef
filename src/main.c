@@ -105,9 +105,9 @@ static u0 render_light(u0) {
     kMat4f m_scale = kMatScale(scale, scale, scale);
 
     kVec3f translate = K_VEC3F_UP;
-    translate = kVecScale3f(10.0f, translate);
+    translate = kVecScale3f(3.6f, translate);
     static f32 a = 0.0f;
-    f32 radius = 10.0f;
+    f32 radius = 6.0f;
     translate.x = radius * sinf(a);
     translate.z = radius * cosf(a);
     a += 0.01f;
@@ -230,6 +230,9 @@ void work(void) {
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
+        glEnable(GL_MULTISAMPLE);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         kWindowSetCursorVisible(kfalse);
         kKeyboardEnable();
         kWindowLoop();
