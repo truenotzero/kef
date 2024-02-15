@@ -3,9 +3,12 @@
 // in vec2 uv;
 in vec3 normal;
 in vec3 worldPos;
+in vec4 lightSpacePos;
 out vec4 fragCol;
 
-uniform sampler2D tex;
+//uniform sampler2D tex;
+layout (binding=0)
+uniform sampler2D uShadowMap;
 uniform vec3 uGlobalLightCol;
 uniform vec3 uGlobalLightPos;
 uniform vec3 uViewPos;
@@ -16,6 +19,30 @@ struct material {
     vec3 specular;
     float shiny;
 };
+
+// pos is the fragment's light-space position
+float shadow(vec4 pos, vec3 ld, vec3 n) {
+    // normalize to clip-space [-1,1]
+    vec3 p = pos.xyz / pos.w;
+    // normalize to [0,1] for use with the depth map
+    p = 0.5f * p + 0.5f;
+
+    if (p.z > 1.0f) {
+        return 0.0f;
+    }
+
+    // the depth map represents the distance between the light
+    // and the nearest point to it at a given xy coord
+    // i.e depth = distance from light
+    // depth of the point nearest the light
+    float c = texture(uShadowMap, p.xy).r;
+    // depth of the current fragment
+    float d = p.z;
+    float b = max(0.05f * (1.0f - dot(n, ld)), 0.005f);
+    // b = 0.005f;
+    b = 0.0f;
+    return d - b > c ? 1.0f : 0.0f;
+}
 
 vec3 diffuse(vec3 ld, vec3 vd, vec3 n, float ambient_strength, vec3 ambient_color, float diffuse_strength, vec3 diffuse_color) {
     vec3 diff = max(dot(n, ld), 0.0f) * diffuse_strength * diffuse_color;
@@ -72,24 +99,14 @@ void main() {
     // view direction
     vec3 vd = normalize(uViewPos - worldPos);
 
-    vec3 p = blinn_phong(ld, vd, n, 0.2f, uGlobalLightCol, 1.0f, uGlobalLightCol, 1.0f, uGlobalLightCol, 0.75f);
-
-    // reflection direction
-    // vec3 rd = reflect(ld, n);
-    
-    // float ambient = 0.2f;
-
-    // float diffuse = max(dot(n, ld), 0.0f);
-
-    // float specularStrength = 1.0f;
-    // float shininess = 128;
-    // float specular = specularStrength * pow(max(dot(vd, rd), 0.0f), shininess);
+    float s = 1.0f - shadow(lightSpacePos, ld, n);
+    vec3 p = blinn_phong(ld, vd, n, 0.05f, uGlobalLightCol, s, uGlobalLightCol, s, uGlobalLightCol, 0.75f);
 
     // vec3 light = (ambient + diffuse + specular) * uGlobalLightCol * objCol;
     vec3 light = p * objCol;
     // light = attenuate(light, light_direction, 1.0f, 0.0014f, 0.000007f); // 3250 range
     // light = attenuate(light, light_direction, 1.0f, 0.027f, 0.0028f); // 160 range
-    // light = attenuate(light, light_direction, 1.0f, 0.07f, 0.0017f); // 65 range
-    light = attenuate(light, light_direction, 1.0f, 0.14f, 0.07f); // 32 range
+    light = attenuate(light, light_direction, 1.0f, 0.07f, 0.0017f); // 65 range
+    // light = attenuate(light, light_direction, 1.0f, 0.14f, 0.07f); // 32 range
     fragCol = vec4(light, 1.0f);
 }

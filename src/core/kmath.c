@@ -86,7 +86,6 @@ kMat4f kMatLookAt(kVec3f cam_pos, kVec3f look_pos) {
     // by convention the camera's local forward (positive z) direction is behind it
     // we can get this by inverting the direction we're looking at
     kVec3f forward = kVecNorm3f(kVecSub3f(cam_pos, look_pos));
-    printf("forward len2: %.2f\n", kVecLen23f(forward));
     assert(is_normalized(forward));
     kVec3f right = kVecNorm3f(kVecCrossf(K_VEC3F_UP, forward));
     kVec3f up = kVecCrossf(forward, right);

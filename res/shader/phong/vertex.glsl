@@ -12,14 +12,17 @@ in vec3 aNormal;
 uniform mat4 uModel;
 uniform mat4 uView;
 uniform mat4 uProj;
+uniform mat4 uLight;
 
 out vec2 uv;
 out vec3 normal;
 out vec3 worldPos;
+out vec4 lightSpacePos;
 
 void main() {
     uv = aUV;
     normal = aNormal;
     worldPos = (uModel * aPos).xyz;
+    lightSpacePos = uLight * uModel * aPos;
     gl_Position = uProj * uView * vec4(worldPos, 1.0f);
 }
