@@ -5,6 +5,7 @@
 
 #define KUNIFORM_MAX 16
 
+/// A uniform variable in a program
 typedef struct kRenderProgramUniform {
     int location;
     int num_elements;
@@ -12,6 +13,7 @@ typedef struct kRenderProgramUniform {
     void *data;
 } kRenderProgramUniform;
 
+/// A shader program that runs on the GPU
 typedef struct kRenderProgram {
     // unsigned vao;
     unsigned program;
@@ -19,11 +21,17 @@ typedef struct kRenderProgram {
     kRenderProgramUniform uniforms[KUNIFORM_MAX];
 } kRenderProgram;
 
+/// Create a new shader program
 b8 kRenderProgramCreate(kRenderProgram *self);
+/// Clean up an existing shader program
 b8 kRenderProgramDestroy(kRenderProgram *self);
+/// Load source code into a shader program
 b8 kRenderProgramLoad(kRenderProgram *self, c_str program_name);
+/// For internal use, see `kRenderProgramBindUniform`
 b8 kRenderProgramBindUniformImpl(kRenderProgram *self, c_str name, void *data, enum kType type, int num_elems);
+/// Bind a variable to a uniform, which will automatically be updated when `kRenderProgramUse` is called
 #define kRenderProgramBindUniform(self, name, num_elems, bound_var_ptr) kRenderProgramBindUniformImpl(self, name, bound_var_ptr, kGetType(*bound_var_ptr), num_elems)
+/// Binds a program to the current draw context, using it for subsequent draw calls
 b8 kRenderProgramUse(kRenderProgram *self);
 
 // #define accessStructElem(strukt, elem) (((strukt *) 0)->elem)

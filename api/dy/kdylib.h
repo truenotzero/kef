@@ -12,7 +12,11 @@
 
 #include <ktype.h>
 
+
+/// Called when the pluign is loaded
 KDYFUN u0 dylib_setup(u0);
+
+/// Called when the plugin is unloaded
 KDYFUN u0 dylib_cleanup(u0);
 
 #endif // KDYNOCALLBACKS
