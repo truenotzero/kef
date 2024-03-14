@@ -173,11 +173,13 @@ static u0 shadow_setup(unsigned *fbo, unsigned *map) {
     glGenTextures(1, map);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, *map);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, shadow_size, shadow_size, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, shadow_size, shadow_size, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    float border[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, *map, 0);
     glDrawBuffer(GL_NONE);
@@ -193,7 +195,6 @@ static u0 shadow_cleanup(unsigned *fbo, unsigned *map) {
 
 static u0 draw_calls(kRenderProgram *prog) {
     render_tea(prog);
-    render_plane(prog);
 }
 
 static kMat4f shadow_pass(unsigned fbo, int width, int height) {
@@ -229,6 +230,7 @@ void kWindowRender(void) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, shadow_map);
     draw_calls(&obj_prog);
+    render_plane(&obj_prog);
 }
 
 void work(void) {
@@ -284,7 +286,7 @@ void work(void) {
         assert(kRenderMeshLoad(&light_mesh, "res/mesh/bulb.obj"));
 
         assert(kRenderMeshCreate(&tea_mesh));
-        assert(kRenderMeshLoad(&tea_mesh, "res/mesh/cube.obj"));
+        assert(kRenderMeshLoad(&tea_mesh, "res/mesh/teapot_smooth.obj"));
 
         assert(kRenderMeshCreate(&plane_mesh));
         assert(kRenderMeshLoad(&plane_mesh, "res/mesh/plane.obj"));

@@ -20,8 +20,15 @@ struct material {
     float shiny;
 };
 
+
 // pos is the fragment's light-space position
 float shadow(vec4 pos, vec3 ld, vec3 n) {
+    vec2 poissionDisk[4] = vec2[] (
+        vec2( -0.94201624, -0.39906216 ),
+        vec2( 0.94558609, -0.76890725 ),
+        vec2( -0.094184101, -0.92938870 ),
+        vec2( 0.34495938, 0.29387760 )
+    );
     // normalize to clip-space [-1,1]
     vec3 p = pos.xyz / pos.w;
     // normalize to [0,1] for use with the depth map
@@ -35,13 +42,27 @@ float shadow(vec4 pos, vec3 ld, vec3 n) {
     // and the nearest point to it at a given xy coord
     // i.e depth = distance from light
     // depth of the point nearest the light
-    float c = texture(uShadowMap, p.xy).r;
     // depth of the current fragment
     float d = p.z;
-    float b = max(0.05f * (1.0f - dot(n, ld)), 0.005f);
+    float b = 0.0f;
+    // b = max(0.05f * (1.0f - dot(n, ld)), 0.005f);
+
+    // float th = clamp(dot(n,ld), 0.0f, 1.0f);
+    // b = 0.005f * tan(acos(th));
+    // b = clamp(b, 0.0f, 0.01f);
+
     // b = 0.005f;
-    b = 0.0f;
-    return d - b > c ? 1.0f : 0.0f;
+
+    float ret = 0.0f;
+    for (int i = 0; i < 4; ++i) {
+        if (texture(uShadowMap, p.xy + poissionDisk[i] / 1000.0f).r < d - b) {
+            ret += 0.25f;
+        }
+    }
+    return ret;
+
+    // float c = texture(uShadowMap, p.xy).r;
+    // return d - b > c ? 1.0f : 0.0f;
 }
 
 vec3 diffuse(vec3 ld, vec3 vd, vec3 n, float ambient_strength, vec3 ambient_color, float diffuse_strength, vec3 diffuse_color) {
